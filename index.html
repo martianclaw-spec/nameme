@@ -1,0 +1,1246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0ea5e9">
+<title>NameMe 👶 — Find the baby name you both love</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👶</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#e0f2fe; --bg2:#ede9fe; --bg3:#fef3c7;
+    --ink:#1e293b; --muted:#64748b;
+    --like:#10b981; --nope:#f43f5e;
+    --boy:#0ea5e9; --girl:#ec4899; --accent:#0ea5e9; --violet:#8b5cf6;
+    --safe-b: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0; font-family:'Outfit',system-ui,sans-serif; color:var(--ink);
+    background:
+      radial-gradient(1200px 800px at 85% -10%, var(--bg3), transparent 60%),
+      radial-gradient(1000px 700px at -10% 20%, var(--bg2), transparent 55%),
+      linear-gradient(160deg, var(--bg1), #f8fafc 70%);
+    background-attachment:fixed;
+    overscroll-behavior:none; height:100dvh; overflow:hidden;
+    user-select:none; -webkit-user-select:none;
+  }
+  #app{height:100%; display:flex; flex-direction:column; max-width:480px; margin:0 auto; position:relative;}
+  .hidden{display:none !important;}
+  input[type=text],input[type=tel]{
+    width:100%; padding:14px 16px; border-radius:16px; border:2px solid #e2e8f0; font-family:inherit; font-size:17px;
+    outline:none; background:#fff; color:var(--ink);
+  }
+  input:focus{border-color:var(--accent);}
+  .bigbtn{
+    border:none; border-radius:999px; padding:15px 28px; font-family:inherit; font-weight:800; font-size:17px; cursor:pointer;
+    background:linear-gradient(90deg,var(--boy),var(--violet)); color:#fff; box-shadow:0 10px 26px rgba(139,92,246,.35);
+    transition:transform .1s;
+  }
+  .bigbtn:active{transform:scale(.96);}
+  .ghostbtn{
+    border:none; border-radius:999px; padding:13px 24px; font-family:inherit; font-weight:700; font-size:15px; cursor:pointer;
+    background:#fff; color:var(--ink); box-shadow:0 4px 16px rgba(30,41,59,.10);
+  }
+
+  /* ---------- centered screens ---------- */
+  .screen{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:32px 28px; text-align:center; overflow-y:auto;}
+  .screen .baby{font-size:68px; line-height:1; filter:drop-shadow(0 8px 16px rgba(14,165,233,.25));}
+  .screen h1{font-family:'Fraunces',serif; font-size:42px; margin:4px 0 0; letter-spacing:-.5px;}
+  .screen h2{font-family:'Fraunces',serif; font-size:28px; margin:0;}
+  .screen .tag{color:var(--muted); margin:0 0 10px; font-size:16px; max-width:320px;}
+  .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:320px;}
+
+  .how{display:flex; flex-direction:column; gap:10px; width:100%; max-width:340px; margin:6px 0 12px; text-align:left;}
+  .step{display:flex; gap:12px; align-items:flex-start; background:#ffffffb8; border-radius:16px; padding:12px 14px; font-size:14.5px; color:#334155; box-shadow:0 3px 12px rgba(30,41,59,.06);}
+  .step b{color:var(--ink);}
+  .step .n{flex:none; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(120deg,var(--boy),var(--violet)); color:#fff; font-weight:800; font-size:14px; margin-top:1px;}
+
+  .codebox{
+    font-family:'Fraunces',serif; font-weight:900; font-size:40px; letter-spacing:8px;
+    background:#fff; border-radius:20px; padding:14px 10px; width:100%; max-width:320px;
+    box-shadow:0 6px 24px rgba(30,41,59,.10);
+  }
+  .sharerow{display:flex; gap:10px; width:100%; max-width:320px;}
+  .sharerow button{flex:1; border:none; border-radius:16px; padding:12px 6px; font-family:inherit; font-weight:700; font-size:14px;
+    background:#fff; box-shadow:0 4px 14px rgba(30,41,59,.09); cursor:pointer; color:var(--ink);}
+  .sharerow .em{display:block; font-size:22px; margin-bottom:2px;}
+
+  .slotbtn{
+    display:flex; align-items:center; gap:14px; padding:16px 20px; border:none; border-radius:20px;
+    background:#fff; box-shadow:0 6px 24px rgba(30,41,59,.10); cursor:pointer;
+    font-family:inherit; font-size:18px; font-weight:700; color:var(--ink);
+  }
+  .slotbtn .em{font-size:28px;}
+
+  /* ---------- header ---------- */
+  header{display:flex; align-items:center; justify-content:space-between; padding:12px 16px 4px; gap:8px;}
+  .logo{font-family:'Fraunces',serif; font-weight:900; font-size:20px; white-space:nowrap;}
+  .logo span{color:var(--accent);}
+  .chips{display:flex; gap:6px;}
+  .chip{display:flex; align-items:center; gap:5px; background:#ffffffcc; backdrop-filter:blur(8px);
+    padding:6px 11px; border-radius:999px; font-weight:600; font-size:13px; box-shadow:0 2px 10px rgba(30,41,59,.08);
+    cursor:pointer; border:none; font-family:inherit; color:var(--ink); white-space:nowrap;}
+
+  /* ---------- gender toggle ---------- */
+  .gtoggle{display:flex; background:#e2e8f0aa; border-radius:999px; padding:4px; margin:6px 18px 2px;}
+  .gtoggle button{flex:1; border:none; border-radius:999px; padding:9px 0; font-family:inherit; font-weight:700; font-size:14px;
+    background:none; color:var(--muted); cursor:pointer; transition:all .15s;}
+  .gtoggle button.on{background:#fff; box-shadow:0 2px 8px rgba(30,41,59,.12); color:var(--ink);}
+
+  .cats{display:flex; gap:7px; overflow-x:auto; padding:8px 18px 2px; scrollbar-width:none;}
+  .cats::-webkit-scrollbar{display:none;}
+  .cats button{
+    flex:none; border:none; border-radius:999px; padding:7px 13px; font-family:inherit; font-weight:700; font-size:13px;
+    background:#ffffffb8; color:var(--muted); cursor:pointer; box-shadow:0 2px 8px rgba(30,41,59,.06); white-space:nowrap;
+  }
+  .cats button.on{background:var(--ink); color:#fff;}
+  .letters{display:flex; flex-wrap:wrap; gap:6px; padding:8px 18px 0; justify-content:center;}
+  .letters button{
+    width:34px; height:34px; border:none; border-radius:50%; font-family:inherit; font-weight:800; font-size:14px;
+    background:#fff; color:var(--ink); cursor:pointer; box-shadow:0 2px 8px rgba(30,41,59,.08);
+  }
+  .letters button.on{background:var(--accent); color:#fff;}
+  .progress{padding:6px 20px 0; font-size:13px; color:var(--muted); display:flex; justify-content:space-between;}
+  .progress b{color:var(--ink);}
+
+  /* ---------- deck ---------- */
+  #deckwrap{flex:1; position:relative; padding:10px 18px 0; min-height:0;}
+  .card{
+    position:absolute; inset:10px 18px 10px; border-radius:28px; background:#fff;
+    box-shadow:0 18px 50px rgba(30,41,59,.16);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+    touch-action:none; will-change:transform; overflow:hidden;
+  }
+  .card .rank{position:absolute; top:18px; left:0; right:0; display:flex; justify-content:center;}
+  .card .rank i{font-style:normal; background:linear-gradient(90deg,#e0f2fe,#fce7f3); color:#334155;
+    padding:6px 14px; border-radius:999px; font-size:13px; font-weight:600;}
+  .card .bigname{
+    font-family:'Fraunces',serif; font-weight:900; font-size:clamp(42px, 14vw, 68px);
+    letter-spacing:-1px; text-align:center; padding:0 16px; line-height:1.05;
+    background:linear-gradient(120deg,#0f172a,#334155); -webkit-background-clip:text; background-clip:text; color:transparent;
+    word-break:break-word;
+  }
+  .card .deco{position:absolute; bottom:22px; font-size:13px; color:#94a3b8; letter-spacing:2px; text-transform:uppercase; font-weight:600;}
+  .stamp{
+    position:absolute; top:34px; padding:8px 18px; border:4px solid; border-radius:14px;
+    font-weight:800; font-size:30px; letter-spacing:2px; opacity:0; transform:rotate(-14deg); pointer-events:none;
+  }
+  .stamp.like{left:22px; color:var(--like); border-color:var(--like);}
+  .stamp.nope{right:22px; color:var(--nope); border-color:var(--nope); transform:rotate(14deg);}
+  .card.under{transform:scale(.95) translateY(14px); box-shadow:0 10px 30px rgba(30,41,59,.10);}
+  .card.under2{transform:scale(.90) translateY(28px); box-shadow:none;}
+  .empty{
+    position:absolute; inset:10px 18px 10px; border-radius:28px; border:2px dashed #cbd5e1;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:var(--muted); text-align:center; padding:24px;
+  }
+  .empty .em{font-size:52px;}
+
+  /* ---------- actions ---------- */
+  .actions{display:flex; justify-content:center; align-items:center; gap:22px; padding:14px 0 8px;}
+  .actions button{
+    border:none; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    background:#fff; box-shadow:0 8px 24px rgba(30,41,59,.14); transition:transform .1s; font-family:inherit;
+  }
+  .actions button:active{transform:scale(.9);}
+  .btn-nope{width:66px; height:66px; font-size:28px; color:var(--nope);}
+  .btn-like{width:66px; height:66px; font-size:28px; color:var(--like);}
+  .btn-undo{width:46px; height:46px; font-size:19px; color:#f59e0b;}
+
+  /* ---------- tabs ---------- */
+  nav{display:flex; background:#ffffffd9; backdrop-filter:blur(10px); border-top:1px solid #e2e8f0; padding-bottom:var(--safe-b);}
+  nav button{
+    flex:1; border:none; background:none; padding:11px 0 9px; font-family:inherit; font-size:11px; font-weight:600;
+    color:var(--muted); cursor:pointer; display:flex; flex-direction:column; gap:3px; align-items:center; position:relative;
+  }
+  nav button.on{color:var(--accent);}
+  nav .ic{font-size:21px; line-height:1;}
+  nav .badge{
+    position:absolute; top:5px; right:calc(50% - 25px); background:var(--nope); color:#fff; font-size:10px; font-weight:800;
+    min-width:17px; height:17px; border-radius:999px; display:flex; align-items:center; justify-content:center; padding:0 4px;
+  }
+
+  /* ---------- lists ---------- */
+  .list{flex:1; overflow-y:auto; padding:8px 18px 20px; min-height:0;}
+  .list h2{font-family:'Fraunces',serif; font-size:25px; margin:8px 0 2px;}
+  .list .sub{color:var(--muted); font-size:14px; margin:0 0 14px;}
+  .seghead{font-size:13px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin:16px 0 8px;}
+  .row{
+    display:flex; align-items:center; gap:12px; background:#fff; border-radius:18px; padding:13px 16px; margin-bottom:10px;
+    box-shadow:0 3px 14px rgba(30,41,59,.07);
+  }
+  .row .nm{font-family:'Fraunces',serif; font-weight:700; font-size:21px; flex:1;}
+  .row .rk{font-size:12px; color:var(--muted); font-weight:600;}
+  .row button{border:none; background:#fef2f2; color:var(--nope); border-radius:12px; padding:8px 12px; font-family:inherit; font-weight:700; cursor:pointer; font-size:13px;}
+  .row.match{background:linear-gradient(120deg,#ecfdf5,#eff6ff); border:1.5px solid #a7f3d0;}
+  .row .heartmark{font-size:19px;}
+  .zero{color:var(--muted); text-align:center; padding:40px 20px; font-size:15px;}
+  .zero .em{font-size:44px; display:block; margin-bottom:10px;}
+  .cta{margin:6px 0 14px; text-align:center;}
+
+  /* ---------- bracket ---------- */
+  .pair{
+    background:#fff; border-radius:20px; padding:14px; margin-bottom:12px; box-shadow:0 3px 14px rgba(30,41,59,.07);
+  }
+  .pairnames{display:flex; gap:10px;}
+  .pairnames button{
+    flex:1; border:2px solid #e2e8f0; background:#f8fafc; border-radius:16px; padding:14px 6px;
+    font-family:'Fraunces',serif; font-weight:800; font-size:20px; color:var(--ink); cursor:pointer; transition:all .12s;
+    word-break:break-word;
+  }
+  .pairnames button.mine{border-color:var(--accent); background:#e0f2fe;}
+  .pairnames button.winner{border-color:var(--like); background:#ecfdf5;}
+  .pairnames button.loser{opacity:.4;}
+  .pairnames .vs{align-self:center; font-weight:800; color:#cbd5e1; font-size:13px;}
+  .pairstatus{font-size:12.5px; font-weight:600; color:var(--muted); margin-top:8px; text-align:center;}
+  .pairstatus.agree{color:var(--like);}
+  .pairstatus.conflict{color:#f59e0b;}
+  .roundhead{font-family:'Fraunces',serif; font-size:22px; margin:14px 0 10px; display:flex; align-items:center; gap:8px;}
+  .roundhead small{font-family:'Outfit'; font-size:12px; color:var(--muted); font-weight:600;}
+
+  /* ---------- modals ---------- */
+  .modal{
+    position:fixed; inset:0; background:rgba(15,23,42,.55); backdrop-filter:blur(6px);
+    display:none; align-items:center; justify-content:center; z-index:50; padding:30px;
+  }
+  .modal.show{display:flex;}
+  .mcard{
+    background:linear-gradient(160deg,#fff,#f0f9ff); border-radius:32px; padding:36px 28px; text-align:center; max-width:340px; width:100%;
+    box-shadow:0 30px 80px rgba(0,0,0,.35); animation:pop .45s cubic-bezier(.2,1.4,.4,1);
+  }
+  @keyframes pop{from{transform:scale(.6); opacity:0;} to{transform:scale(1); opacity:1;}}
+  .mcard .hearts{font-size:44px;}
+  .mcard h2{font-family:'Fraunces',serif; font-size:30px; margin:8px 0 2px;}
+  .mcard .mn{font-family:'Fraunces',serif; font-size:50px; font-weight:900; margin:10px 0;
+    background:linear-gradient(90deg,var(--boy),var(--violet)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .mcard p{color:var(--muted); margin:0 0 20px; font-size:15px;}
+  .confetti{position:fixed; top:-10px; font-size:20px; z-index:60; pointer-events:none; animation:fall linear forwards;}
+  @keyframes fall{to{transform:translateY(110vh) rotate(720deg);}}
+
+  #toast{
+    position:fixed; bottom:calc(90px + var(--safe-b)); left:50%; transform:translateX(-50%);
+    background:#0f172a; color:#fff; padding:10px 18px; border-radius:999px; font-size:14px; font-weight:600;
+    opacity:0; transition:opacity .25s; pointer-events:none; z-index:70; white-space:nowrap; max-width:90vw; overflow:hidden; text-overflow:ellipsis;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- LANDING -->
+  <div class="screen" id="s-landing">
+    <div class="baby">👶</div>
+    <h1>Name<span style="color:var(--boy)">Me</span></h1>
+    <p class="tag" style="margin-bottom:2px">Find the baby name you <b>both</b> love.</p>
+    <div class="how">
+      <div class="step"><span class="n">1</span><div><b>Start a game</b> and invite your partner with a link</div></div>
+      <div class="step"><span class="n">2</span><div><b>Heart the names you love</b> — each of you, on your own phone, no peeking</div></div>
+      <div class="step"><span class="n">3</span><div><b>Names you both heart become matches</b> — then face them off in a bracket to crown the one 🏆</div></div>
+    </div>
+    <div class="stack">
+      <button class="bigbtn" id="btn-create">Start a new game 💫</button>
+      <button class="ghostbtn" id="btn-showjoin">I have an invite code</button>
+      <div id="joinbox" class="hidden stack">
+        <input type="text" id="joincode" placeholder="6-letter code (e.g. QX3F7B)" maxlength="6" autocapitalize="characters">
+        <button class="bigbtn" id="btn-join">Join our room →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLAIM IDENTITY -->
+  <div class="screen hidden" id="s-claim">
+    <div class="baby">💞</div>
+    <h2 id="claim-title">Who are you?</h2>
+    <p class="tag" id="claim-sub"></p>
+    <div class="stack" id="claim-body"></div>
+  </div>
+
+  <!-- INVITE -->
+  <div class="screen hidden" id="s-invite">
+    <div class="baby">💌</div>
+    <h2>Invite your partner</h2>
+    <p class="tag">They join with this code — or send them the magic link:</p>
+    <div class="codebox" id="invite-code"></div>
+    <div class="stack">
+      <input type="text" id="invite-to" placeholder="Their phone number or email" inputmode="email">
+      <div class="sharerow">
+        <button id="sh-sms"><span class="em">💬</span>Text</button>
+        <button id="sh-email"><span class="em">✉️</span>Email</button>
+        <button id="sh-copy"><span class="em">🔗</span>Copy</button>
+        <button id="sh-share"><span class="em">📤</span>Share</button>
+      </div>
+      <button class="bigbtn" id="btn-startswiping">Start swiping →</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="s-main" class="hidden" style="display:flex;flex-direction:column;flex:1;min-height:0;">
+    <header>
+      <div class="logo">Name<span>Me</span>👶</div>
+      <div class="chips">
+        <button class="chip" id="chip-room" title="Invite / room code">💌 <span id="chip-code"></span></button>
+        <button class="chip" id="chip-user"></button>
+      </div>
+    </header>
+
+    <!-- SWIPE VIEW -->
+    <div id="view-swipe" style="display:flex;flex-direction:column;flex:1;min-height:0;">
+      <div class="gtoggle">
+        <button data-g="boy" class="on">💙 Boys</button>
+        <button data-g="girl">🩷 Girls</button>
+      </div>
+      <div class="cats" id="cats"></div>
+      <div class="letters hidden" id="letters"></div>
+      <div class="progress"><span id="prog-left"></span><span id="prog-right"></span></div>
+      <div id="deckwrap"></div>
+      <div class="actions">
+        <button class="btn-undo" id="btn-undo" title="Undo">↩️</button>
+        <button class="btn-nope" id="btn-nope" title="Nope">✖️</button>
+        <button class="btn-like" id="btn-like" title="Like">💚</button>
+      </div>
+    </div>
+
+    <!-- MY LIKES -->
+    <div id="view-likes" class="list hidden">
+      <h2>Names I liked 💛</h2>
+      <p class="sub">Only you see this. Matched ones glow.</p>
+      <div id="likes-rows"></div>
+    </div>
+
+    <!-- MATCHES -->
+    <div id="view-matches" class="list hidden">
+      <h2>It's a match! 💫</h2>
+      <p class="sub" id="matches-sub">Names you both love.</p>
+      <div id="match-rows"></div>
+    </div>
+
+    <!-- BRACKET -->
+    <div id="view-bracket" class="list hidden">
+      <h2>The Bracket 🏆</h2>
+      <p class="sub">Your matches, head to head. Agree on a winner to advance it.</p>
+      <div id="bracket-body"></div>
+    </div>
+
+    <nav>
+      <button data-view="swipe" class="on"><span class="ic">🔥</span>Swipe</button>
+      <button data-view="likes"><span class="ic">💛</span>My Likes</button>
+      <button data-view="matches" id="tab-matches"><span class="ic">💫</span>Matches</button>
+      <button data-view="bracket"><span class="ic">🏆</span>Bracket</button>
+    </nav>
+  </div>
+</div>
+
+<!-- MATCH MODAL -->
+<div id="matchmodal" class="modal">
+  <div class="mcard">
+    <div class="hearts">💘💥💘</div>
+    <h2>It's a match!</h2>
+    <div class="mn" id="match-name"></div>
+    <p id="match-sub">You both love this name — it's a contender!</p>
+    <button class="bigbtn" id="match-close">Keep swiping</button>
+  </div>
+</div>
+
+<!-- CHAMPION MODAL -->
+<div id="champmodal" class="modal">
+  <div class="mcard">
+    <div class="hearts">👑🏆👑</div>
+    <h2>We have a name!</h2>
+    <div class="mn" id="champ-name"></div>
+    <p>Bracket champion — chosen by both of you.</p>
+    <button class="bigbtn" id="champ-close">Amazing 🥹</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SUPABASE_URL = "https://zdfcywsgnwbnvegqwbbp.supabase.co";
+const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkZmN5d3NnbndibnZlZ3F3YmJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzQ0NzYsImV4cCI6MjEwMDI1MDQ3Nn0.EoWYfq24AIVSMz7ZlylyFzqVIHbJrAeHDoHyLPWeV-M";
+const REST = SUPABASE_URL + "/rest/v1";
+const HEADERS = { "apikey": ANON_KEY, "Authorization": "Bearer " + ANON_KEY, "Content-Type": "application/json" };
+
+// ---------- state ----------
+let room = null;           // {id, code}
+let members = {};          // {a:{display_name}, b:{display_name}}
+let me = null;             // 'a' | 'b'
+let gender = localStorage.getItem("nameme_gender") || "boy";
+let cat = { type: "all" };
+try { cat = JSON.parse(localStorage.getItem("nameme_cat")) || cat; } catch(e){}
+let names = [];            // all names both genders
+let byId = {};
+let mySwipes = {};         // name_id -> liked
+let partnerLikes = new Set();
+let decks = { boy: [], girl: [] };
+let lastSwipe = null;
+let bracket = null;        // {id, gender, entrants[], status, champion_name_id}
+let votes = {};            // "round:pair:user" -> name_id
+let bracketPoll = null;
+let champShown = false;
+
+const $ = s => document.querySelector(s);
+const other = () => me === "a" ? "b" : "a";
+const myName = () => (members[me] && members[me].display_name) || "You";
+const partnerName = () => (members[other()] && members[other()].display_name) || "your partner";
+const roomLink = () => location.origin + location.pathname + "?room=" + room.code;
+
+// ---------- api ----------
+const MOCK = ANON_KEY.startsWith("__"); // placeholders not injected → local demo mode
+async function api(path, opts = {}) {
+  if (MOCK) return mockApi(path, opts);
+  const r = await fetch(REST + path, { ...opts, headers: { ...HEADERS, ...(opts.headers || {}) } });
+  if (!r.ok) throw new Error(await r.text());
+  const t = await r.text();
+  return t ? JSON.parse(t) : null;
+}
+
+// ---------- name categories ----------
+const BIBLICAL = {
+  boy: ["Aaron","Abel","Abraham","Abram","Adam","Amos","Andrew","Asa","Asher","Benjamin","Boaz","Caleb","Cyrus","Daniel","David","Eli","Elias","Elijah","Elisha","Emmanuel","Ephraim","Ezekiel","Ezra","Gabriel","Gideon","Hezekiah","Hosea","Isaac","Isaiah","Israel","Jacob","James","Jared","Jesse","Joel","John","Jonah","Jonathan","Jordan","Joseph","Joshua","Josiah","Judah","Jude","Levi","Luke","Malachi","Mark","Matthew","Matthias","Micah","Michael","Moses","Nathan","Nathanael","Nehemiah","Noah","Obadiah","Paul","Peter","Philip","Reuben","Rufus","Samson","Samuel","Saul","Seth","Silas","Simeon","Simon","Solomon","Stephen","Thaddeus","Thomas","Timothy","Titus","Tobias","Uriah","Zachariah","Zechariah","Zion"],
+  girl: ["Abigail","Anna","Bethany","Chloe","Claudia","Deborah","Delilah","Dinah","Eden","Elizabeth","Esther","Eve","Hannah","Joanna","Judith","Julia","Leah","Lydia","Martha","Mary","Miriam","Naomi","Phoebe","Priscilla","Rachel","Rebecca","Rebekah","Ruth","Sarah","Selah","Susannah","Tabitha"],
+};
+const DECADES = {
+  "1950s": {
+    boy: ["James","Michael","Robert","John","David","William","Richard","Thomas","Mark","Charles","Steven","Gary","Joseph","Donald","Ronald","Kenneth","Paul","Larry","Daniel","Stephen","Dennis","Timothy","Edward","Jeffrey","George","Gregory","Kevin","Douglas","Frank","Patrick","Raymond","Peter","Anthony","Danny","Walter","Philip","Craig","Alan","Roger","Gerald"],
+    girl: ["Mary","Linda","Patricia","Susan","Deborah","Barbara","Debra","Karen","Nancy","Donna","Cynthia","Sandra","Pamela","Sharon","Kathleen","Carol","Diane","Brenda","Cheryl","Janet","Elizabeth","Carolyn","Margaret","Janice","Judith","Rebecca","Joyce","Teresa","Christine","Catherine","Shirley","Gloria","Betty","Beverly","Laura","Denise","Connie","Rita","Martha"],
+  },
+  "1960s": {
+    boy: ["Michael","David","John","James","Robert","Mark","William","Richard","Thomas","Jeffrey","Steven","Joseph","Timothy","Kevin","Scott","Brian","Charles","Paul","Daniel","Christopher","Kenneth","Anthony","Gregory","Ronald","Donald","Gary","Eric","Stephen","Edward","Douglas","Todd","Patrick","George","Keith","Larry","Matthew","Terry","Andrew","Randy","Jerry"],
+    girl: ["Lisa","Mary","Susan","Karen","Kimberly","Patricia","Linda","Donna","Michelle","Cynthia","Sandra","Deborah","Tammy","Pamela","Lori","Laura","Elizabeth","Julie","Jennifer","Brenda","Angela","Barbara","Debra","Sharon","Teresa","Nancy","Christine","Cheryl","Denise","Kelly","Dawn","Tracy","Amy","Kathleen","Wendy","Carol","Diane","Robin","Rhonda","Sherry"],
+  },
+  "1970s": {
+    boy: ["Michael","Christopher","Jason","David","James","John","Robert","Brian","William","Matthew","Joseph","Daniel","Kevin","Eric","Jeffrey","Richard","Scott","Mark","Steven","Timothy","Thomas","Anthony","Charles","Joshua","Ryan","Jeremy","Paul","Andrew","Gregory","Chad","Kenneth","Jonathan","Stephen","Shawn","Aaron","Adam","Patrick","Justin","Sean","Todd"],
+    girl: ["Jennifer","Amy","Melissa","Michelle","Kimberly","Lisa","Angela","Heather","Stephanie","Nicole","Jessica","Elizabeth","Rebecca","Kelly","Mary","Christina","Amanda","Sarah","Laura","Julie","Shannon","Christine","Tammy","Karen","Tracy","Dawn","Susan","Andrea","Tina","Patricia","Cynthia","Lori","Rachel","April","Wendy","Crystal","Maria","Stacy","Erin"],
+  },
+  "1980s": {
+    boy: ["Michael","Christopher","Matthew","Joshua","David","James","Daniel","Robert","John","Joseph","Jason","Justin","Andrew","Ryan","William","Brian","Brandon","Jonathan","Nicholas","Anthony","Eric","Adam","Kevin","Thomas","Steven","Timothy","Richard","Jeremy","Jeffrey","Kyle","Aaron","Charles","Mark","Jacob","Benjamin","Zachary","Sean","Patrick","Nathan","Travis"],
+    girl: ["Jessica","Jennifer","Amanda","Ashley","Sarah","Stephanie","Melissa","Nicole","Elizabeth","Heather","Tiffany","Michelle","Amber","Megan","Amy","Rachel","Kimberly","Christina","Lauren","Crystal","Brittany","Rebecca","Laura","Danielle","Emily","Samantha","Angela","Erin","Kelly","Sara","Lisa","Katherine","Andrea","Jamie","Mary","Erica","Courtney","Kristen","Shannon","April"],
+  },
+  "1990s": {
+    boy: ["Michael","Christopher","Matthew","Joshua","Jacob","Nicholas","Andrew","Daniel","Tyler","Joseph","Brandon","David","James","Ryan","John","Zachary","Justin","William","Anthony","Robert","Jonathan","Austin","Alexander","Kyle","Kevin","Thomas","Cody","Jordan","Eric","Benjamin","Aaron","Christian","Samuel","Dylan","Steven","Brian","Jose","Timothy","Nathan","Adam"],
+    girl: ["Jessica","Ashley","Emily","Sarah","Samantha","Amanda","Brittany","Elizabeth","Taylor","Megan","Hannah","Kayla","Lauren","Stephanie","Rachel","Jennifer","Nicole","Alexis","Victoria","Amber","Alyssa","Courtney","Rebecca","Danielle","Jasmine","Brianna","Katherine","Alexandra","Madison","Morgan","Melissa","Michelle","Kelsey","Chelsea","Anna","Olivia","Emma","Sara","Kimberly","Heather"],
+  },
+  "2000s": {
+    boy: ["Jacob","Michael","Joshua","Matthew","Daniel","Christopher","Andrew","Ethan","Joseph","William","Anthony","David","Alexander","Nicholas","Ryan","Tyler","James","John","Jonathan","Noah","Brandon","Christian","Dylan","Samuel","Benjamin","Zachary","Nathan","Logan","Justin","Gabriel","Jose","Austin","Kevin","Elijah","Caleb","Robert","Thomas","Jordan","Cameron","Jack"],
+    girl: ["Emily","Madison","Emma","Olivia","Hannah","Abigail","Isabella","Samantha","Elizabeth","Ashley","Alexis","Sarah","Sophia","Alyssa","Grace","Ava","Taylor","Brianna","Lauren","Chloe","Natalie","Kayla","Jessica","Anna","Victoria","Mia","Hailey","Sydney","Jasmine","Julia","Morgan","Destiny","Rachel","Ella","Kaitlyn","Megan","Katherine","Savannah","Jennifer","Alexandra"],
+  },
+};
+const BIBLICAL_SET = { boy: new Set(BIBLICAL.boy), girl: new Set(BIBLICAL.girl) };
+const DECADE_SETS = {};
+for (const d of Object.keys(DECADES)) DECADE_SETS[d] = { boy: new Set(DECADES[d].boy), girl: new Set(DECADES[d].girl) };
+
+// ---------- mock backend (local demo only; real deploys use Supabase) ----------
+const MOCK_BOYS = ["Liam","Noah","Oliver","James","Elijah","Mateo","Theodore","Henry","Lucas","William","Benjamin","Levi","Sebastian","Jack","Ezra","Michael","Daniel","Leo","Owen","Samuel","Hudson","Alexander","Asher","Luca","Ethan","John","David","Jackson","Joseph","Mason","Luke","Matthew","Julian","Dylan","Elias","Jacob","Maverick","Gabriel","Logan","Aiden","Thomas","Isaac","Miles","Grayson","Santiago","Anthony","Wyatt","Carter"];
+const MOCK_GIRLS = ["Olivia","Emma","Charlotte","Amelia","Sophia","Mia","Isabella","Ava","Evelyn","Luna","Harper","Sofia","Camila","Eleanor","Elizabeth","Violet","Scarlett","Emily","Hazel","Lily","Gianna","Aurora","Penelope","Aria","Nora","Chloe","Ellie","Mila","Avery","Layla","Abigail","Ella","Isla","Eliana","Nova","Madison","Zoe","Ivy","Grace","Lucy","Willow","Emilia","Riley","Naomi","Victoria","Stella","Elena","Hannah"];
+// demo deck = core sample + category names, so every category has content in demo mode
+function buildMockList(g, core){
+  const out = [...core];
+  const extra = [...BIBLICAL[g], ...Object.keys(DECADES).flatMap(d => DECADES[d][g])];
+  for (const n of extra) if (!out.includes(n)) out.push(n);
+  return out;
+}
+const mockDB = {
+  nameme_names: [
+    ...buildMockList("boy", MOCK_BOYS).map((n, i) => ({ id: i + 1, name: n, gender: "boy", rank: i + 1 })),
+    ...buildMockList("girl", MOCK_GIRLS).map((n, i) => ({ id: 1000 + i + 1, name: n, gender: "girl", rank: i + 1 })),
+  ],
+  nameme_rooms: [], nameme_members: [], nameme_swipes: [], nameme_brackets: [], nameme_bracket_votes: [],
+};
+let mockSeq = 5000;
+// persist demo data across refreshes so swiped names never come back
+try {
+  const saved = JSON.parse(localStorage.getItem("nameme_mockdb") || "null");
+  if (saved && saved.seq) {
+    for (const k of ["nameme_rooms","nameme_members","nameme_swipes","nameme_brackets","nameme_bracket_votes"]) mockDB[k] = saved[k] || [];
+    mockSeq = saved.seq;
+  }
+} catch(e){}
+function saveMock(){
+  try {
+    const { nameme_rooms, nameme_members, nameme_swipes, nameme_brackets, nameme_bracket_votes } = mockDB;
+    localStorage.setItem("nameme_mockdb", JSON.stringify({ nameme_rooms, nameme_members, nameme_swipes, nameme_brackets, nameme_bracket_votes, seq: mockSeq }));
+  } catch(e){}
+}
+function mockFilter(rows, params){
+  let out = rows;
+  for (const [k, v] of params) {
+    if (["select","order","limit","on_conflict"].includes(k)) continue;
+    if (v.startsWith("eq.")) out = out.filter(r => String(r[k]) === v.slice(3));
+  }
+  return out;
+}
+function mockAfterWrite(table, row){
+  // simulate the partner so the demo is playable solo
+  if (table === "nameme_rooms") {
+    mockDB.nameme_members.push({ room_id: row.id, user_key: "b", display_name: "Demo-Partner" });
+    for (const n of mockDB.nameme_names) {
+      mockDB.nameme_swipes.push({ id: mockSeq++, room_id: row.id, user_key: "b", name_id: n.id, liked: Math.random() < 0.45, created_at: Date.now() });
+    }
+  }
+  if (table === "nameme_bracket_votes" && row.user_key === me) {
+    const { bracket_id, round, pair, choice_name_id } = row;
+    setTimeout(() => {
+      const keys = { bracket_id, user_key: "b", round, pair };
+      const existing = mockDB.nameme_bracket_votes.find(r2 => Object.entries(keys).every(([k, v]) => String(r2[k]) === String(v)));
+      if (existing) { existing.choice_name_id = choice_name_id; saveMock(); return; } // conflict resolution: partner comes around
+      let choice = choice_name_id;
+      const pr = (window.__lastRounds && window.__lastRounds[round] || [])[pair];
+      if (pr && Math.random() > 0.7) choice = (pr.a === choice_name_id ? pr.b : pr.a); // 30%: disagree
+      mockDB.nameme_bracket_votes.push({ id: mockSeq++, ...keys, choice_name_id: choice, created_at: Date.now() });
+      saveMock();
+    }, 1200);
+  }
+}
+async function mockApi(path, opts = {}){
+  const [p, q] = path.split("?");
+  const table = p.slice(1);
+  const params = new URLSearchParams(q || "");
+  const store = mockDB[table];
+  const method = (opts.method || "GET").toUpperCase();
+  if (method === "GET") {
+    let rows = mockFilter(store, params).slice();
+    const order = params.get("order") || "";
+    if (order.startsWith("rank.asc")) rows.sort((a, b) => a.rank - b.rank);
+    if (order.startsWith("created_at.desc")) rows.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+    const lim = params.get("limit");
+    if (lim) rows = rows.slice(0, +lim);
+    return rows.map(r => ({ ...r }));
+  }
+  if (method === "POST") {
+    const body = JSON.parse(opts.body);
+    const conflict = params.get("on_conflict");
+    if (conflict) {
+      const keys = conflict.split(",");
+      const i = store.findIndex(r => keys.every(k => String(r[k]) === String(body[k])));
+      if (i >= 0) { Object.assign(store[i], body); mockAfterWrite(table, store[i]); saveMock(); return [{ ...store[i] }]; }
+    }
+    const row = { id: mockSeq++, created_at: Date.now(), ...body };
+    store.push(row);
+    mockAfterWrite(table, row);
+    saveMock();
+    return [{ ...row }];
+  }
+  if (method === "PATCH") {
+    const body = JSON.parse(opts.body);
+    mockFilter(store, params).forEach(r => Object.assign(r, body));
+    saveMock();
+    return null;
+  }
+  if (method === "DELETE") {
+    const del = new Set(mockFilter(store, params));
+    mockDB[table] = store.filter(r => !del.has(r));
+    saveMock();
+    return null;
+  }
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+let toastT;
+function toast(msg){
+  const t = $("#toast"); t.textContent = msg; t.style.opacity = 1;
+  clearTimeout(toastT); toastT = setTimeout(() => t.style.opacity = 0, 2000);
+}
+function show(id){
+  ["s-landing","s-claim","s-invite","s-main"].forEach(x => $("#"+x).classList.toggle("hidden", x !== id));
+}
+
+// ---------- rooms & identity ----------
+function randCode(){
+  const A = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  let c = ""; for (let i = 0; i < 6; i++) c += A[Math.floor(Math.random()*A.length)];
+  return c;
+}
+function saveIdentity(){
+  localStorage.setItem("nameme_room", room.code);
+  localStorage.setItem("nameme_id_" + room.code, me);
+}
+async function fetchRoom(code){
+  const r = await api(`/nameme_rooms?code=eq.${encodeURIComponent(code)}&select=id,code`);
+  if (!r.length) return null;
+  const m = await api(`/nameme_members?room_id=eq.${r[0].id}&select=user_key,display_name`);
+  members = {}; m.forEach(x => members[x.user_key] = x);
+  return r[0];
+}
+async function createRoom(){
+  for (let tries = 0; tries < 4; tries++) {
+    const code = randCode();
+    try {
+      const r = await api("/nameme_rooms", {
+        method: "POST", headers: { "Prefer": "return=representation" },
+        body: JSON.stringify({ code }),
+      });
+      return r[0];
+    } catch(e){ /* code collision — retry */ }
+  }
+  throw new Error("could not create room");
+}
+async function claimSlot(slot, displayName){
+  await api("/nameme_members", {
+    method: "POST",
+    body: JSON.stringify({ room_id: room.id, user_key: slot, display_name: displayName }),
+  });
+  members[slot] = { user_key: slot, display_name: displayName };
+  me = slot;
+  saveIdentity();
+}
+
+function claimScreen(isCreator){
+  show("s-claim");
+  const body = $("#claim-body");
+  const taken = k => !!members[k];
+  if (isCreator || (!taken("a") || !taken("b"))) {
+    const slot = !taken("a") ? "a" : "b";
+    $("#claim-title").textContent = isCreator ? "First — who are you?" : "You're invited! 💌";
+    $("#claim-sub").textContent = isCreator
+      ? "Your name shows up when you match."
+      : `Join ${(members.a && members.a.display_name) || "your partner"}'s room and start swiping.`;
+    body.innerHTML = `
+      <input type="text" id="claim-name" placeholder="Your first name" maxlength="20">
+      <button class="bigbtn" id="claim-go">Let's go →</button>`;
+    $("#claim-go").onclick = async () => {
+      const n = $("#claim-name").value.trim() || (slot === "a" ? "Partner 1" : "Partner 2");
+      try {
+        await claimSlot(slot, n);
+        if (isCreator) inviteScreen(); else enterMain();
+      } catch(e){ console.error(e); toast("⚠️ Couldn't join — try again"); }
+    };
+  } else {
+    // both slots taken — device lost identity; pick who you are
+    $("#claim-title").textContent = "Who are you?";
+    $("#claim-sub").textContent = "This room already has two players.";
+    body.innerHTML = ["a","b"].map(k => `
+      <button class="slotbtn" data-slot="${k}"><span class="em">${k === "a" ? "🫶" : "💝"}</span> I'm ${escapeHtml(members[k].display_name)}</button>
+    `).join("");
+    body.querySelectorAll("[data-slot]").forEach(b => b.onclick = () => {
+      me = b.dataset.slot; saveIdentity(); enterMain();
+    });
+  }
+}
+
+function inviteScreen(){
+  show("s-invite");
+  $("#invite-code").textContent = room.code;
+  const msg = () => `👶💘 Help me name our baby! Swipe baby names with me on NameMe — tap to join our room: ${roomLink()}`;
+  const dest = () => $("#invite-to").value.trim();
+  $("#sh-sms").onclick = () => {
+    const d = dest().replace(/[^\d+]/g, "");
+    location.href = `sms:${d}?&body=${encodeURIComponent(msg())}`;
+  };
+  $("#sh-email").onclick = () => {
+    location.href = `mailto:${encodeURIComponent(dest())}?subject=${encodeURIComponent("Help me name our baby 👶💘")}&body=${encodeURIComponent(msg())}`;
+  };
+  $("#sh-copy").onclick = async () => {
+    try { await navigator.clipboard.writeText(msg()); toast("🔗 Invite copied!"); }
+    catch(e){ toast("Copy failed — long-press the code"); }
+  };
+  $("#sh-share").onclick = async () => {
+    if (navigator.share) { try { await navigator.share({ title: "NameMe 👶", text: msg() }); } catch(e){} }
+    else toast("Sharing not supported here — use Copy");
+  };
+  $("#btn-startswiping").onclick = enterMain;
+}
+
+// ---------- main ----------
+async function enterMain(){
+  show("s-main");
+  $("#chip-code").textContent = "Invite · " + room.code;
+  $("#chip-user").textContent = "🫶 " + myName();
+  applyGenderTheme();
+  renderCats();
+  try {
+    await loadData();
+    renderDeck();
+    computeMatches();
+  } catch(e){
+    console.error(e);
+    $("#deckwrap").innerHTML = `<div class="empty"><span class="em">😵</span><b>Couldn't load names</b><span>Check your connection and refresh.</span></div>`;
+  }
+}
+
+async function loadData(){
+  const [n, s, p] = await Promise.all([
+    api("/nameme_names?select=id,name,gender,rank&order=rank.asc&limit=3000"),
+    api(`/nameme_swipes?room_id=eq.${room.id}&user_key=eq.${me}&select=name_id,liked&limit=10000`),
+    api(`/nameme_swipes?room_id=eq.${room.id}&user_key=eq.${other()}&liked=eq.true&select=name_id&limit=10000`),
+  ]);
+  names = n; byId = {}; n.forEach(x => byId[x.id] = x);
+  mySwipes = {}; s.forEach(x => mySwipes[x.name_id] = x.liked);
+  partnerLikes = new Set(p.map(x => x.name_id));
+  buildDecks();
+}
+
+function inCat(n){
+  if (cat.type === "top100") return n.rank <= 100;
+  if (cat.type === "biblical") return BIBLICAL_SET[n.gender].has(n.name);
+  if (cat.type === "decade") return DECADE_SETS[cat.value][n.gender].has(n.name);
+  if (cat.type === "letter") return n.name.toUpperCase().startsWith(cat.value);
+  return true; // 'all'
+}
+
+function buildDecks(){
+  for (const g of ["boy","girl"]) {
+    const un = names.filter(x => x.gender === g && !(x.id in mySwipes) && inCat(x));
+    const d = [];
+    for (let i = 0; i < un.length; i += 25) {
+      const chunk = un.slice(i, i + 25);
+      for (let j = chunk.length - 1; j > 0; j--) {
+        const k = Math.floor(Math.random() * (j + 1));
+        [chunk[j], chunk[k]] = [chunk[k], chunk[j]];
+      }
+      d.push(...chunk);
+    }
+    decks[g] = d;
+  }
+}
+
+function applyGenderTheme(){
+  document.documentElement.style.setProperty("--accent", gender === "boy" ? "var(--boy)" : "var(--girl)");
+  document.querySelectorAll(".gtoggle button").forEach(b => b.classList.toggle("on", b.dataset.g === gender));
+}
+
+// ---------- categories UI ----------
+const CATS = [
+  { key: "all", label: "✨ All names" },
+  { key: "top100", label: "🔥 Top 100" },
+  { key: "biblical", label: "📖 Biblical" },
+  { key: "1950s", label: "1950s" },
+  { key: "1960s", label: "1960s" },
+  { key: "1970s", label: "1970s" },
+  { key: "1980s", label: "1980s" },
+  { key: "1990s", label: "1990s" },
+  { key: "2000s", label: "2000s" },
+  { key: "letter", label: "🔤 A–Z" },
+];
+function catKey(){ return cat.type === "decade" ? cat.value : (cat.type === "letter" ? "letter" : cat.type); }
+function catDesc(){
+  if (cat.type === "top100") return `top-100 ${gender} names`;
+  if (cat.type === "biblical") return `biblical ${gender} names`;
+  if (cat.type === "decade") return `${cat.value} ${gender} names`;
+  if (cat.type === "letter") return `${gender} names with ${cat.value}`;
+  return `${gender} names`;
+}
+function renderCats(){
+  const el = $("#cats");
+  el.innerHTML = CATS.map(c =>
+    `<button data-cat="${c.key}" class="${catKey() === c.key ? "on" : ""}">${c.label}${c.key === "letter" && cat.type === "letter" ? " · " + cat.value : ""}</button>`
+  ).join("");
+  el.querySelectorAll("[data-cat]").forEach(b => b.onclick = () => {
+    const k = b.dataset.cat;
+    if (k === "letter") { $("#letters").classList.toggle("hidden"); renderLetters(); return; }
+    $("#letters").classList.add("hidden");
+    cat = /^\d{4}s$/.test(k) ? { type: "decade", value: k } : { type: k };
+    saveCat();
+  });
+}
+function renderLetters(){
+  const el = $("#letters");
+  el.innerHTML = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(L =>
+    `<button class="${cat.type === "letter" && cat.value === L ? "on" : ""}">${L}</button>`).join("");
+  el.querySelectorAll("button").forEach(b => b.onclick = () => {
+    cat = { type: "letter", value: b.textContent };
+    saveCat();
+  });
+}
+function saveCat(){
+  localStorage.setItem("nameme_cat", JSON.stringify(cat));
+  renderCats();
+  if (!$("#letters").classList.contains("hidden")) renderLetters();
+  buildDecks(); renderDeck();
+}
+
+// ---------- deck ----------
+function renderDeck(){
+  const wrap = $("#deckwrap");
+  wrap.innerHTML = "";
+  const deck = decks[gender];
+  const total = names.filter(x => x.gender === gender && inCat(x)).length;
+  $("#prog-left").innerHTML = `<b>${total.toLocaleString()}</b> ${catDesc()}`;
+  $("#prog-right").innerHTML = `<b>${deck.length.toLocaleString()}</b> to go`;
+
+  if (!deck.length) {
+    const msg = cat.type === "all"
+      ? `<b>You've seen every ${gender} name!</b><span>Check Matches — the name is in there.</span>`
+      : `<b>That's everything in this category!</b><span>Pick another category above to keep going.</span>`;
+    wrap.innerHTML = `<div class="empty"><span class="em">🏁</span>${msg}</div>`;
+    return;
+  }
+  const top3 = deck.slice(0, 3).reverse();
+  top3.forEach((n, i) => {
+    let badge = `#${n.rank} most popular 🇺🇸`;
+    if (cat.type === "biblical") badge = "📖 A biblical classic";
+    if (cat.type === "decade") badge = `🎶 Big in the ${cat.value}`;
+    const c = document.createElement("div");
+    c.className = "card" + (i === top3.length - 1 ? "" : (i === top3.length - 2 ? " under" : " under2"));
+    c.innerHTML = `
+      <div class="rank"><i>${badge}</i></div>
+      <div class="bigname">${escapeHtml(n.name)}</div>
+      <div class="deco">baby ${n.gender} ${n.gender === "boy" ? "👦" : "👧"}</div>
+      <div class="stamp like">LIKE</div>
+      <div class="stamp nope">NOPE</div>`;
+    if (i === top3.length - 1) attachDrag(c, n);
+    wrap.appendChild(c);
+  });
+}
+
+function attachDrag(card, n){
+  let sx=0, sy=0, dx=0, dy=0, dragging=false;
+  const px = e => e.touches ? e.touches[0].clientX : e.clientX;
+  const py = e => e.touches ? e.touches[0].clientY : e.clientY;
+  card.addEventListener("pointerdown", e => {
+    card.setPointerCapture(e.pointerId);
+    dragging = true; sx = px(e); sy = py(e);
+    card.style.transition = "none";
+  });
+  card.addEventListener("pointermove", e => {
+    if (!dragging) return;
+    dx = px(e) - sx; dy = py(e) - sy;
+    card.style.transform = `translate(${dx}px,${dy}px) rotate(${dx/18}deg)`;
+    const p = Math.min(Math.abs(dx)/110, 1);
+    card.querySelector(dx > 0 ? ".stamp.like" : ".stamp.nope").style.opacity = p;
+    card.querySelector(dx > 0 ? ".stamp.nope" : ".stamp.like").style.opacity = 0;
+  });
+  const up = () => {
+    if (!dragging) return;
+    dragging = false;
+    if (Math.abs(dx) > 110) flyOut(card, n, dx > 0);
+    else {
+      card.style.transition = "transform .3s cubic-bezier(.2,1.2,.4,1)";
+      card.style.transform = "";
+      card.querySelectorAll(".stamp").forEach(s => s.style.opacity = 0);
+    }
+    dx = 0; dy = 0;
+  };
+  card.addEventListener("pointerup", up);
+  card.addEventListener("pointercancel", up);
+}
+
+function flyOut(card, n, liked){
+  const wrap = card.parentElement;
+  const startT = card.style.transform || "";
+  const ghost = card.cloneNode(true);
+  ghost.classList.remove("under", "under2");
+  ghost.classList.add("ghost");
+  commitSwipe(n, liked); // state + save immediately; re-renders the stack underneath
+  ghost.style.transition = "none";
+  ghost.style.transform = startT;
+  ghost.querySelector(liked ? ".stamp.like" : ".stamp.nope").style.opacity = 1;
+  ghost.querySelector(liked ? ".stamp.nope" : ".stamp.like").style.opacity = 0;
+  wrap.appendChild(ghost);
+  requestAnimationFrame(() => {
+    ghost.style.transition = "transform .45s ease-in";
+    const off = (liked ? 1 : -1) * window.innerWidth * 1.2;
+    ghost.style.transform = `translate(${off}px, -40px) rotate(${liked ? 22 : -22}deg)`;
+  });
+  setTimeout(() => ghost.remove(), 520);
+}
+
+function swipeTop(liked){
+  const deck = decks[gender];
+  if (!deck.length) return;
+  const n = deck[0];
+  const cards = document.querySelectorAll("#deckwrap .card:not(.ghost)");
+  const top = cards[cards.length - 1];
+  if (top) flyOut(top, n, liked);
+}
+
+async function commitSwipe(n, liked){
+  decks[n.gender] = decks[n.gender].filter(x => x.id !== n.id);
+  mySwipes[n.id] = liked;
+  lastSwipe = n.id;
+  renderDeck();
+  try {
+    await api("/nameme_swipes?on_conflict=room_id,user_key,name_id", {
+      method: "POST", headers: { "Prefer": "resolution=merge-duplicates" },
+      body: JSON.stringify({ room_id: room.id, user_key: me, name_id: n.id, liked }),
+    });
+    if (liked) {
+      const hit = await api(`/nameme_swipes?room_id=eq.${room.id}&user_key=eq.${other()}&name_id=eq.${n.id}&liked=eq.true&select=name_id`);
+      if (hit.length) {
+        partnerLikes.add(n.id);
+        computeMatches();
+        showMatch(n);
+      }
+    }
+  } catch(e){ console.error(e); toast("⚠️ Couldn't save — check connection"); }
+}
+
+async function undo(){
+  if (lastSwipe == null) { toast("Nothing to undo"); return; }
+  const id = lastSwipe; lastSwipe = null;
+  delete mySwipes[id];
+  decks[byId[id].gender].unshift(byId[id]);
+  if (byId[id].gender === gender) renderDeck();
+  computeMatches();
+  try {
+    await api(`/nameme_swipes?room_id=eq.${room.id}&user_key=eq.${me}&name_id=eq.${id}`, { method: "DELETE" });
+    toast("↩️ Undone: " + byId[id].name);
+  } catch(e){ console.error(e); }
+}
+
+// ---------- matches ----------
+function matchesFor(g){
+  return names.filter(x => x.gender === g && mySwipes[x.id] === true && partnerLikes.has(x.id));
+}
+function computeMatches(){
+  const count = matchesFor("boy").length + matchesFor("girl").length;
+  const b = $("#tab-matches");
+  let badge = b.querySelector(".badge");
+  if (count) {
+    if (!badge) { badge = document.createElement("span"); badge.className = "badge"; b.appendChild(badge); }
+    badge.textContent = count;
+  } else if (badge) badge.remove();
+}
+
+async function refreshPartnerLikes(){
+  try {
+    const p = await api(`/nameme_swipes?room_id=eq.${room.id}&user_key=eq.${other()}&liked=eq.true&select=name_id&limit=10000`);
+    partnerLikes = new Set(p.map(x => x.name_id));
+    if (!members[other()]) {
+      const m = await api(`/nameme_members?room_id=eq.${room.id}&select=user_key,display_name`);
+      members = {}; m.forEach(x => members[x.user_key] = x);
+    }
+  } catch(e){ console.error(e); }
+  computeMatches();
+}
+
+async function renderMatches(){
+  await refreshPartnerLikes();
+  $("#matches-sub").textContent = `Names both ${myName()} and ${partnerName()} love.`;
+  const rows = $("#match-rows");
+  let html = "";
+  for (const g of ["boy","girl"]) {
+    const m = matchesFor(g);
+    if (!m.length) continue;
+    html += `<div class="seghead">${g === "boy" ? "💙 Boys" : "🩷 Girls"} · ${m.length}</div>`;
+    if (m.length >= 4) html += `<div class="cta"><button class="ghostbtn" data-bracket="${g}">🏆 Narrow it down — start a ${g} bracket</button></div>`;
+    html += m.map(x => `
+      <div class="row match"><span class="heartmark">💫</span>
+        <span class="nm">${escapeHtml(x.name)}</span><span class="rk">#${x.rank}</span></div>`).join("");
+  }
+  rows.innerHTML = html || `<div class="zero"><span class="em">💔</span>No matches yet.<br>Keep swiping — or nudge ${escapeHtml(partnerName())} to catch up!</div>`;
+  rows.querySelectorAll("[data-bracket]").forEach(b => b.onclick = () => {
+    startBracket(b.dataset.bracket);
+  });
+}
+
+function renderLikes(){
+  const rows = $("#likes-rows");
+  let html = "";
+  for (const g of ["boy","girl"]) {
+    const liked = names.filter(x => x.gender === g && mySwipes[x.id] === true);
+    if (!liked.length) continue;
+    html += `<div class="seghead">${g === "boy" ? "💙 Boys" : "🩷 Girls"} · ${liked.length}</div>`;
+    html += liked.map(x => `
+      <div class="row ${partnerLikes.has(x.id) ? "match" : ""}">
+        ${partnerLikes.has(x.id) ? '<span class="heartmark">💫</span>' : ""}
+        <span class="nm">${escapeHtml(x.name)}</span><span class="rk">#${x.rank}</span>
+        <button data-unlike="${x.id}">Unlike</button></div>`).join("");
+  }
+  rows.innerHTML = html || `<div class="zero"><span class="em">🫥</span>No likes yet.<br>Get swiping!</div>`;
+  rows.querySelectorAll("[data-unlike]").forEach(b => b.onclick = async () => {
+    const id = +b.dataset.unlike;
+    mySwipes[id] = false;
+    renderLikes(); computeMatches();
+    try {
+      await api(`/nameme_swipes?room_id=eq.${room.id}&user_key=eq.${me}&name_id=eq.${id}`, {
+        method: "PATCH", body: JSON.stringify({ liked: false }),
+      });
+      toast("Removed " + byId[id].name);
+    } catch(e){ console.error(e); }
+  });
+}
+
+// ---------- bracket ----------
+function nextPow2(n){ let p = 1; while (p < n) p *= 2; return p; }
+function seedSlots(n){
+  let r = [1];
+  while (r.length < n) { const m = r.length * 2 + 1; const nx = []; for (const s of r) nx.push(s, m - s); r = nx; }
+  return r;
+}
+
+async function startBracket(g){
+  const m = matchesFor(g).sort((a, b) => a.rank - b.rank);
+  if (m.length < 4) { toast("Need at least 4 matches for a bracket"); return; }
+  const entrants = m.slice(0, 16).map(x => x.id);
+  try {
+    const existing = await api(`/nameme_brackets?room_id=eq.${room.id}&gender=eq.${g}&status=eq.active&select=id`);
+    if (existing.length) { switchView("bracket"); return; }
+    await api("/nameme_brackets", {
+      method: "POST",
+      body: JSON.stringify({ room_id: room.id, gender: g, entrants }),
+    });
+    if (m.length > 16) toast("Top 16 matches seeded in!");
+    switchView("bracket");
+  } catch(e){ console.error(e); toast("⚠️ Couldn't start bracket"); }
+}
+
+async function loadBracket(){
+  const b = await api(`/nameme_brackets?room_id=eq.${room.id}&gender=eq.${gender}&order=created_at.desc&limit=1&select=id,gender,entrants,status,champion_name_id`);
+  bracket = b.length ? b[0] : null;
+  votes = {};
+  if (bracket) {
+    const v = await api(`/nameme_bracket_votes?bracket_id=eq.${bracket.id}&select=user_key,round,pair,choice_name_id&limit=1000`);
+    v.forEach(x => votes[`${x.round}:${x.pair}:${x.user_key}`] = x.choice_name_id);
+  }
+}
+
+function computeRounds(){
+  const P = nextPow2(bracket.entrants.length);
+  let slots = seedSlots(P).map(s => bracket.entrants[s - 1] ?? null);
+  const rounds = [];
+  let r = 0;
+  while (slots.length > 1) {
+    const pairs = [];
+    for (let p = 0; p < slots.length / 2; p++) {
+      const a = slots[p * 2], b = slots[p * 2 + 1];
+      let winner = null, state = "open";
+      if (b == null) { winner = a; state = "bye"; }
+      else if (a == null) { winner = b; state = "bye"; }
+      else {
+        const va = votes[`${r}:${p}:a`], vb = votes[`${r}:${p}:b`];
+        if (va != null && vb != null) {
+          if (va === vb) { winner = va; state = "agreed"; }
+          else state = "conflict";
+        } else if (va != null || vb != null) state = "half";
+      }
+      pairs.push({ a, b, winner, state, round: r, pair: p });
+    }
+    rounds.push(pairs);
+    window.__lastRounds = rounds;
+    if (pairs.some(x => x.winner == null)) return { rounds, done: false, champion: null };
+    slots = pairs.map(x => x.winner);
+    r++;
+  }
+  return { rounds, done: true, champion: slots[0] };
+}
+
+function roundName(size){
+  if (size === 2) return "🏆 The Final";
+  if (size === 4) return "Semifinals";
+  if (size === 8) return "Quarterfinals";
+  return "Round of " + size;
+}
+
+async function renderBracket(){
+  const body = $("#bracket-body");
+  try { await loadBracket(); } catch(e){ console.error(e); }
+  if (!bracket) {
+    const m = matchesFor(gender);
+    body.innerHTML = `<div class="zero"><span class="em">🏆</span>
+      No ${gender} bracket yet.<br>${m.length >= 4
+        ? `You have ${m.length} matches — start the showdown!`
+        : `Get at least 4 ${gender} matches, then battle them head-to-head.`}</div>
+      ${m.length >= 4 ? `<div class="cta"><button class="bigbtn" id="bk-start">Start ${gender} bracket 🏆</button></div>` : ""}`;
+    const s = $("#bk-start");
+    if (s) s.onclick = () => startBracket(gender);
+    return;
+  }
+
+  const { rounds, done, champion } = computeRounds();
+  let html = "";
+  if (done && champion != null) {
+    html += `<div class="zero" style="padding:16px"><span class="em">👑</span>
+      <b style="font-family:'Fraunces';font-size:34px;color:var(--ink)">${escapeHtml(byId[champion].name)}</b><br>Your bracket champion!</div>`;
+    if (bracket.status !== "done") {
+      bracket.status = "done";
+      api(`/nameme_brackets?id=eq.${bracket.id}`, { method: "PATCH", body: JSON.stringify({ status: "done", champion_name_id: champion }) }).catch(console.error);
+    }
+    if (!champShown) { champShown = true; showChampion(byId[champion]); }
+  }
+
+  // show rounds latest-first, only the active (last computed) round is interactive
+  const active = rounds[rounds.length - 1];
+  const activeSize = active.length * 2;
+  rounds.slice().reverse().forEach(pairs => {
+    const size = pairs.length * 2;
+    const isActive = pairs === active && !done;
+    const decided = pairs.filter(x => x.winner != null || (x.a == null && x.b == null)).length;
+    html += `<div class="roundhead">${roundName(size)} <small>${decided}/${pairs.length} decided</small></div>`;
+    pairs.forEach(pr => {
+      if (pr.a == null && pr.b == null) return;
+      html += renderPair(pr, isActive || pr.state !== "bye" && pairs === active);
+    });
+  });
+  body.innerHTML = html;
+  body.querySelectorAll("[data-vote]").forEach(btn => btn.onclick = () => {
+    const [r, p, id] = btn.dataset.vote.split(":").map(Number);
+    castVote(r, p, id);
+  });
+
+  // footer controls
+  body.insertAdjacentHTML("beforeend",
+    `<div class="cta" style="margin-top:18px"><button class="ghostbtn" id="bk-restart2">↻ Scrap & restart this bracket</button></div>`);
+  $("#bk-restart2").onclick = restartBracket;
+}
+
+function renderPair(pr, interactive){
+  const nm = id => id == null ? "—" : escapeHtml(byId[id].name);
+  const myVote = votes[`${pr.round}:${pr.pair}:${me}`];
+  const theirVote = votes[`${pr.round}:${pr.pair}:${other()}`];
+  const cls = id => {
+    if (pr.winner != null) return id === pr.winner ? "winner" : "loser";
+    return id === myVote ? "mine" : "";
+  };
+  if (pr.state === "bye") {
+    return `<div class="pair"><div class="pairnames">
+      <button class="winner" disabled>${nm(pr.winner)}</button></div>
+      <div class="pairstatus agree">✓ Advances on a bye</div></div>`;
+  }
+  let status;
+  if (pr.state === "agreed") status = `<div class="pairstatus agree">✓ You both picked ${nm(pr.winner)}!</div>`;
+  else if (pr.state === "conflict") status = `<div class="pairstatus conflict">⚡ You disagree — discuss! Either of you can change your pick.</div>`;
+  else if (myVote != null) status = `<div class="pairstatus">You picked ${nm(myVote)} · waiting for ${escapeHtml(partnerName())}…</div>`;
+  else if (theirVote != null) status = `<div class="pairstatus">${escapeHtml(partnerName())} has voted — your turn!</div>`;
+  else status = `<div class="pairstatus">Tap your favorite</div>`;
+  const btn = id => `<button class="${cls(id)}" ${pr.winner != null ? "disabled" : ""} data-vote="${pr.round}:${pr.pair}:${id}">${nm(id)}</button>`;
+  return `<div class="pair"><div class="pairnames">${btn(pr.a)}<span class="vs">VS</span>${btn(pr.b)}</div>${status}</div>`;
+}
+
+async function castVote(round, pair, nameId){
+  votes[`${round}:${pair}:${me}`] = nameId;
+  try {
+    await api("/nameme_bracket_votes?on_conflict=bracket_id,user_key,round,pair", {
+      method: "POST", headers: { "Prefer": "resolution=merge-duplicates" },
+      body: JSON.stringify({ bracket_id: bracket.id, user_key: me, round, pair, choice_name_id: nameId }),
+    });
+  } catch(e){ console.error(e); toast("⚠️ Vote didn't save"); }
+  renderBracket();
+}
+
+async function restartBracket(){
+  if (!bracket) return;
+  if (!confirm("Scrap this bracket and start fresh from your current matches?")) return;
+  try {
+    await api(`/nameme_brackets?id=eq.${bracket.id}`, { method: "DELETE" });
+    bracket = null; champShown = false;
+    await startBracket(gender);
+    renderBracket();
+  } catch(e){ console.error(e); }
+}
+
+// ---------- modals ----------
+function showMatch(n){
+  $("#match-name").textContent = n.name;
+  $("#match-sub").textContent = `${myName()} and ${partnerName()} both love this name — it's a contender!`;
+  $("#matchmodal").classList.add("show");
+  confetti();
+}
+$("#match-close").onclick = () => $("#matchmodal").classList.remove("show");
+function showChampion(n){
+  $("#champ-name").textContent = n.name;
+  $("#champmodal").classList.add("show");
+  confetti(); setTimeout(confetti, 700);
+}
+$("#champ-close").onclick = () => $("#champmodal").classList.remove("show");
+
+function confetti(){
+  const emojis = ["🎉","💙","🩷","✨","👶","💜","🎊"];
+  for (let i = 0; i < 34; i++) {
+    const s = document.createElement("span");
+    s.className = "confetti";
+    s.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    s.style.left = Math.random()*100 + "vw";
+    s.style.animationDuration = (2 + Math.random()*2.5) + "s";
+    s.style.animationDelay = (Math.random()*.8) + "s";
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 6000);
+  }
+}
+
+// ---------- nav ----------
+function switchView(v){
+  document.querySelectorAll("nav button").forEach(x => x.classList.toggle("on", x.dataset.view === v));
+  $("#view-swipe").style.display = v === "swipe" ? "flex" : "none";
+  $("#view-likes").classList.toggle("hidden", v !== "likes");
+  $("#view-matches").classList.toggle("hidden", v !== "matches");
+  $("#view-bracket").classList.toggle("hidden", v !== "bracket");
+  clearInterval(bracketPoll); bracketPoll = null;
+  if (v === "likes") renderLikes();
+  if (v === "matches") renderMatches();
+  if (v === "bracket") {
+    renderBracket();
+    bracketPoll = setInterval(renderBracket, 8000);
+  }
+}
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => switchView(b.dataset.view));
+
+document.querySelectorAll(".gtoggle button").forEach(b => b.onclick = () => {
+  gender = b.dataset.g;
+  localStorage.setItem("nameme_gender", gender);
+  applyGenderTheme();
+  renderDeck();
+});
+
+$("#btn-like").onclick = () => swipeTop(true);
+$("#btn-nope").onclick = () => swipeTop(false);
+$("#btn-undo").onclick = undo;
+document.addEventListener("keydown", e => {
+  if ($("#s-main").classList.contains("hidden")) return;
+  if ($("#view-swipe").style.display === "none") return;
+  if (e.key === "ArrowRight") swipeTop(true);
+  if (e.key === "ArrowLeft") swipeTop(false);
+  if (e.key === "z") undo();
+});
+
+$("#chip-room").onclick = inviteScreen;
+$("#chip-user").onclick = () => {
+  if (confirm("Switch who you are on this device?")) {
+    localStorage.removeItem("nameme_id_" + room.code);
+    claimScreen(false);
+  }
+};
+
+// ---------- boot ----------
+$("#btn-create").onclick = async () => {
+  try {
+    room = await createRoom();
+    history.replaceState(null, "", "?room=" + room.code);
+    members = {};
+    claimScreen(true);
+  } catch(e){ console.error(e); toast("⚠️ Couldn't create a room — try again"); }
+};
+$("#btn-showjoin").onclick = () => $("#joinbox").classList.toggle("hidden");
+$("#btn-join").onclick = async () => {
+  const code = $("#joincode").value.trim().toUpperCase();
+  if (code.length !== 6) { toast("Code is 6 characters"); return; }
+  await joinByCode(code);
+};
+
+async function joinByCode(code){
+  try {
+    const r = await fetchRoom(code);
+    if (!r) { toast("Room not found — check the code"); return; }
+    room = r;
+    history.replaceState(null, "", "?room=" + room.code);
+    const saved = localStorage.getItem("nameme_id_" + code);
+    if (saved && members[saved]) { me = saved; saveIdentity(); enterMain(); }
+    else claimScreen(false);
+  } catch(e){ console.error(e); toast("⚠️ Connection problem"); }
+}
+
+(async function boot(){
+  const urlCode = new URLSearchParams(location.search).get("room");
+  const savedCode = localStorage.getItem("nameme_room");
+  const codes = [...new Set([urlCode, savedCode].filter(Boolean).map(c => c.toUpperCase()))];
+  for (const code of codes) {
+    try {
+      const r = await fetchRoom(code);
+      if (r) {
+        room = r;
+        history.replaceState(null, "", "?room=" + room.code);
+        const saved = localStorage.getItem("nameme_id_" + code);
+        if (saved && members[saved]) { me = saved; enterMain(); return; }
+        claimScreen(false); return;
+      }
+    } catch(e){ console.error(e); }
+  }
+  history.replaceState(null, "", location.pathname);
+  show("s-landing");
+})();
+</script>
+</body>
+</html>
