@@ -4,7 +4,34 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0ea5e9">
-<title>NameMe 👶 — Find the baby name you both love</title>
+<title>NameMe — Baby Name Game for Couples | Swipe, Match & Pick a Name Together</title>
+<meta name="description" content="The free baby name game for couples. Swipe through 2,600+ boy and girl names with your partner, match on the ones you both love, then crown the winner in a head-to-head bracket. Popular names, biblical names, and favorites by decade — no signup needed.">
+<meta name="keywords" content="baby names, baby name game, baby name app for couples, baby name picker, boy names, girl names, popular baby names 2026, biblical baby names, baby name matcher, how to choose a baby name, baby name generator">
+<link rel="canonical" href="https://ourbbname.com/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ourbbname.com/">
+<meta property="og:site_name" content="NameMe">
+<meta property="og:title" content="NameMe — Find the baby name you both love">
+<meta property="og:description" content="Swipe 2,600+ baby names with your partner. Match on the ones you both love, then crown the winner in a bracket. Free, no signup.">
+<meta property="og:image" content="https://ourbbname.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="NameMe — Find the baby name you both love">
+<meta name="twitter:description" content="The baby name game for couples: swipe, match, and crown the winning name. Free.">
+<meta name="twitter:image" content="https://ourbbname.com/og.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"NameMe","url":"https://ourbbname.com/","applicationCategory":"LifestyleApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"A baby name game for couples: swipe through 2,600+ boy and girl names, match on names you both love, and pick the winner in a tournament bracket."}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"How does the NameMe baby name game work?","acceptedAnswer":{"@type":"Answer","text":"Start a game, invite your partner with a link, and each of you swipes through baby names on your own phone. Names you both heart become matches, and a head-to-head bracket helps you crown the final name."}},
+{"@type":"Question","name":"Is NameMe free?","acceptedAnswer":{"@type":"Answer","text":"Yes — NameMe is completely free. No signup, no account, no app download; it runs in your phone's browser."}},
+{"@type":"Question","name":"Does NameMe have both boy and girl names?","acceptedAnswer":{"@type":"Answer","text":"Yes. There are separate decks with about 1,600 boy names and 1,100 girl names, ranked by real US popularity, plus categories like Top 100, biblical names, names by decade, and names by starting letter."}},
+{"@type":"Question","name":"Is our baby name game private?","acceptedAnswer":{"@type":"Answer","text":"Yes. Each couple's game lives behind a private room code that only you and your partner have, and full games turn away anyone else who opens the link."}}
+]}
+</script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👶</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -60,6 +87,12 @@
   .step b{color:var(--ink);}
   .step .n{flex:none; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center;
     background:linear-gradient(120deg,var(--boy),var(--violet)); color:#fff; font-weight:800; font-size:14px; margin-top:1px;}
+
+  .seo{max-width:340px; text-align:left; color:var(--muted); font-size:13.5px; margin-top:34px; line-height:1.55;}
+  .seo h2{font-family:'Fraunces',serif; font-size:17px; color:var(--ink); margin:18px 0 4px;}
+  .seo p{margin:0 0 6px;}
+  .seo details{background:#ffffff90; border-radius:12px; padding:8px 12px; margin:6px 0;}
+  .seo summary{font-weight:700; color:var(--ink); cursor:pointer; font-size:13.5px;}
 
   .codebox{
     font-family:'Fraunces',serif; font-weight:900; font-size:40px; letter-spacing:8px;
@@ -265,6 +298,17 @@
         <button class="bigbtn" id="btn-join">Join our room →</button>
       </div>
     </div>
+    <div class="seo">
+      <h2>The baby name game for couples</h2>
+      <p>NameMe helps expecting parents agree on a baby name — without the endless lists and vetoed suggestions. Each of you swipes through more than 2,600 popular boy names and girl names on your own phone. When you both heart the same name, it's a match. Then face your matches off in a tournament bracket and crown the one.</p>
+      <h2>Browse baby names your way</h2>
+      <p>Swipe today's most popular baby names, timeless biblical names, classic favorites from the 1950s through the 2000s, names starting with any letter, or a random mix — all ranked by real US popularity.</p>
+      <h2>Questions, answered</h2>
+      <details><summary>How does it work?</summary><p>Start a game, invite your partner by text or email, and swipe separately. Matches are names you both love; the bracket picks the winner.</p></details>
+      <details><summary>Is it free?</summary><p>Completely. No signup, no download — it runs right in your browser.</p></details>
+      <details><summary>Boy and girl names?</summary><p>Both — about 1,600 boy names and 1,100 girl names, ranked by popularity.</p></details>
+      <details><summary>Is our game private?</summary><p>Yes. Your game lives behind a private room code only you two have.</p></details>
+    </div>
   </div>
 
   <!-- CLAIM IDENTITY -->
@@ -383,6 +427,23 @@ const SUPABASE_URL = "https://zdfcywsgnwbnvegqwbbp.supabase.co";
 const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkZmN5d3NnbndibnZlZ3F3YmJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzQ0NzYsImV4cCI6MjEwMDI1MDQ3Nn0.EoWYfq24AIVSMz7ZlylyFzqVIHbJrAeHDoHyLPWeV-M";
 const REST = SUPABASE_URL + "/rest/v1";
 const HEADERS = { "apikey": ANON_KEY, "Authorization": "Bearer " + ANON_KEY, "Content-Type": "application/json" };
+
+// ---------- analytics (production domains only) ----------
+const GA_ID = "__GA_ID__";
+if (/(ourbbname\.com|vercel\.app)$/.test(location.hostname)) {
+  const v = document.createElement("script");
+  v.defer = true; v.src = "/_vercel/insights/script.js";
+  document.head.appendChild(v);
+  if (!GA_ID.startsWith("__")) {
+    const g = document.createElement("script");
+    g.async = true; g.src = "https://www.googletagmanager.com/gtag/js?id=" + GA_ID;
+    document.head.appendChild(g);
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function(){ dataLayer.push(arguments); };
+    gtag("js", new Date());
+    gtag("config", GA_ID);
+  }
+}
 
 // ---------- state ----------
 let room = null;           // {id, code}
