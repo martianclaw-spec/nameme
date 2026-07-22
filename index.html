@@ -135,6 +135,11 @@
   }
   .stamp.like{left:22px; color:var(--like); border-color:var(--like);}
   .stamp.nope{right:22px; color:var(--nope); border-color:var(--nope); transform:rotate(14deg);}
+  .stamp.superstamp{left:50%; right:auto; top:auto; bottom:70px; transform:translateX(-50%) rotate(-6deg);
+    color:#f59e0b; border-color:#f59e0b; font-size:24px;}
+  .stamp.vetostamp{left:50%; right:auto; top:44%; transform:translateX(-50%) rotate(-10deg);
+    color:#ef4444; border-color:#ef4444; font-size:26px;}
+  .row .vetobtn{border:none; background:#fff7ed; color:#ea580c; border-radius:12px; padding:8px 10px; font-weight:700; cursor:pointer; font-size:14px;}
   .card.under{transform:scale(.95) translateY(14px); box-shadow:0 10px 30px rgba(30,41,59,.10);}
   .card.under2{transform:scale(.90) translateY(28px); box-shadow:none;}
   .empty{
@@ -150,9 +155,17 @@
     background:#fff; box-shadow:0 8px 24px rgba(30,41,59,.14); transition:transform .1s; font-family:inherit;
   }
   .actions button:active{transform:scale(.9);}
-  .btn-nope{width:66px; height:66px; font-size:28px; color:var(--nope);}
-  .btn-like{width:66px; height:66px; font-size:28px; color:var(--like);}
-  .btn-undo{width:46px; height:46px; font-size:19px; color:#f59e0b;}
+  .btn-nope{width:64px; height:64px; font-size:27px; color:var(--nope);}
+  .btn-like{width:64px; height:64px; font-size:27px; color:var(--like);}
+  .btn-undo{width:44px; height:44px; font-size:18px; color:#f59e0b;}
+  .btn-super{width:52px; height:52px; font-size:23px; position:relative;}
+  .btn-veto{width:44px; height:44px; font-size:18px; position:relative;}
+  .btn-super i, .btn-veto i{
+    position:absolute; top:-3px; right:-3px; font-style:normal; color:#fff; font-size:10.5px; font-weight:800;
+    min-width:17px; height:17px; border-radius:999px; display:flex; align-items:center; justify-content:center; padding:0 3px;
+  }
+  .btn-super i{background:#f59e0b;}
+  .btn-veto i{background:#ef4444;}
 
   /* ---------- tabs ---------- */
   nav{display:flex; background:#ffffffd9; backdrop-filter:blur(10px); border-top:1px solid #e2e8f0; padding-bottom:var(--safe-b);}
@@ -304,7 +317,9 @@
       <div class="actions">
         <button class="btn-undo" id="btn-undo" title="Undo">↩️</button>
         <button class="btn-nope" id="btn-nope" title="Nope">✖️</button>
+        <button class="btn-super" id="btn-super" title="Super-like (3 per day)">⭐<i id="super-left">3</i></button>
         <button class="btn-like" id="btn-like" title="Like">💚</button>
+        <button class="btn-veto" id="btn-veto" title="Veto forever (3 total)">🔥<i id="veto-left">3</i></button>
       </div>
     </div>
 
@@ -341,8 +356,8 @@
 <!-- MATCH MODAL -->
 <div id="matchmodal" class="modal">
   <div class="mcard">
-    <div class="hearts">💘💥💘</div>
-    <h2>It's a match!</h2>
+    <div class="hearts" id="match-hearts">💘💥💘</div>
+    <h2 id="match-title">It's a match!</h2>
     <div class="mn" id="match-name"></div>
     <p id="match-sub">You both love this name — it's a contender!</p>
     <button class="bigbtn" id="match-close">Keep swiping</button>
@@ -379,6 +394,11 @@ let names = [];            // all names both genders
 let byId = {};
 let mySwipes = {};         // name_id -> liked
 let partnerLikes = new Set();
+let mySuper = new Set();   // name_ids I super-liked
+let partnerSuper = new Set();
+let superToday = 0;        // super-likes used today (max 3/day)
+let vetoes = new Set();    // name_ids vetoed by either partner — gone forever
+let myVetoCount = 0;       // max 3 ever
 let decks = { boy: [], girl: [] };
 let lastSwipe = null;
 let bracket = null;        // {id, gender, entrants[], status, champion_name_id}
@@ -452,21 +472,21 @@ const mockDB = {
     ...buildMockList("boy", MOCK_BOYS).map((n, i) => ({ id: i + 1, name: n, gender: "boy", rank: i + 1 })),
     ...buildMockList("girl", MOCK_GIRLS).map((n, i) => ({ id: 1000 + i + 1, name: n, gender: "girl", rank: i + 1 })),
   ],
-  nameme_rooms: [], nameme_members: [], nameme_swipes: [], nameme_brackets: [], nameme_bracket_votes: [],
+  nameme_rooms: [], nameme_members: [], nameme_swipes: [], nameme_brackets: [], nameme_bracket_votes: [], nameme_vetoes: [],
 };
 let mockSeq = 5000;
 // persist demo data across refreshes so swiped names never come back
 try {
   const saved = JSON.parse(localStorage.getItem("nameme_mockdb") || "null");
   if (saved && saved.seq) {
-    for (const k of ["nameme_rooms","nameme_members","nameme_swipes","nameme_brackets","nameme_bracket_votes"]) mockDB[k] = saved[k] || [];
+    for (const k of ["nameme_rooms","nameme_members","nameme_swipes","nameme_brackets","nameme_bracket_votes","nameme_vetoes"]) mockDB[k] = saved[k] || [];
     mockSeq = saved.seq;
   }
 } catch(e){}
 function saveMock(){
   try {
-    const { nameme_rooms, nameme_members, nameme_swipes, nameme_brackets, nameme_bracket_votes } = mockDB;
-    localStorage.setItem("nameme_mockdb", JSON.stringify({ nameme_rooms, nameme_members, nameme_swipes, nameme_brackets, nameme_bracket_votes, seq: mockSeq }));
+    const { nameme_rooms, nameme_members, nameme_swipes, nameme_brackets, nameme_bracket_votes, nameme_vetoes } = mockDB;
+    localStorage.setItem("nameme_mockdb", JSON.stringify({ nameme_rooms, nameme_members, nameme_swipes, nameme_brackets, nameme_bracket_votes, nameme_vetoes, seq: mockSeq }));
   } catch(e){}
 }
 function mockFilter(rows, params){
@@ -482,7 +502,8 @@ function mockAfterWrite(table, row){
   if (table === "nameme_rooms") {
     mockDB.nameme_members.push({ room_id: row.id, user_key: "b", display_name: "Demo-Partner" });
     for (const n of mockDB.nameme_names) {
-      mockDB.nameme_swipes.push({ id: mockSeq++, room_id: row.id, user_key: "b", name_id: n.id, liked: Math.random() < 0.45, created_at: Date.now() });
+      const liked = Math.random() < 0.45;
+      mockDB.nameme_swipes.push({ id: mockSeq++, room_id: row.id, user_key: "b", name_id: n.id, liked, super: liked && Math.random() < 0.04, created_at: Date.now() });
     }
   }
   if (table === "nameme_bracket_votes" && row.user_key === me) {
@@ -665,15 +686,33 @@ async function enterMain(){
 }
 
 async function loadData(){
-  const [n, s, p] = await Promise.all([
+  const dayStart = new Date(new Date().setHours(0, 0, 0, 0));
+  const [n, s, p, v] = await Promise.all([
     api("/nameme_names?select=id,name,gender,rank&order=rank.asc&limit=3000"),
-    api(`/nameme_swipes?room_id=eq.${room.id}&user_key=eq.${me}&select=name_id,liked&limit=10000`),
-    api(`/nameme_swipes?room_id=eq.${room.id}&user_key=eq.${other()}&liked=eq.true&select=name_id&limit=10000`),
+    api(`/nameme_swipes?room_id=eq.${room.id}&user_key=eq.${me}&select=name_id,liked,super,created_at&limit=10000`),
+    api(`/nameme_swipes?room_id=eq.${room.id}&user_key=eq.${other()}&liked=eq.true&select=name_id,super&limit=10000`),
+    api(`/nameme_vetoes?room_id=eq.${room.id}&select=name_id,user_key&limit=100`),
   ]);
   names = n; byId = {}; n.forEach(x => byId[x.id] = x);
-  mySwipes = {}; s.forEach(x => mySwipes[x.name_id] = x.liked);
+  mySwipes = {}; mySuper = new Set(); superToday = 0;
+  s.forEach(x => {
+    mySwipes[x.name_id] = x.liked;
+    if (x.super) { mySuper.add(x.name_id); if (new Date(x.created_at) >= dayStart) superToday++; }
+  });
   partnerLikes = new Set(p.map(x => x.name_id));
+  partnerSuper = new Set(p.filter(x => x.super).map(x => x.name_id));
+  vetoes = new Set(v.map(x => x.name_id));
+  myVetoCount = v.filter(x => x.user_key === me).length;
+  updateActionCounters();
   buildDecks();
+}
+
+function superLeft(){ return Math.max(0, 3 - superToday); }
+function vetoLeft(){ return Math.max(0, 3 - myVetoCount); }
+function updateActionCounters(){
+  const s = $("#super-left"), vv = $("#veto-left");
+  if (s) s.textContent = superLeft();
+  if (vv) vv.textContent = vetoLeft();
 }
 
 // seeded random deck — same seed (room code + size) on both phones, so
@@ -723,10 +762,10 @@ function buildDecks(){
   for (const g of ["boy","girl"]) {
     if (cat.type === "random") {
       // keep the seeded order — it already feels random and matches the partner's order
-      decks[g] = randomList(g, cat.value).filter(x => !(x.id in mySwipes));
+      decks[g] = randomList(g, cat.value).filter(x => !(x.id in mySwipes) && !vetoes.has(x.id));
       continue;
     }
-    const un = names.filter(x => x.gender === g && !(x.id in mySwipes) && inCat(x));
+    const un = names.filter(x => x.gender === g && !(x.id in mySwipes) && !vetoes.has(x.id) && inCat(x));
     const d = [];
     for (let i = 0; i < un.length; i += 25) {
       const chunk = un.slice(i, i + 25);
@@ -846,7 +885,9 @@ function renderDeck(){
       <div class="bigname">${escapeHtml(n.name)}</div>
       <div class="deco">baby ${n.gender} ${n.gender === "boy" ? "👦" : "👧"}</div>
       <div class="stamp like">LIKE</div>
-      <div class="stamp nope">NOPE</div>`;
+      <div class="stamp nope">NOPE</div>
+      <div class="stamp superstamp">SUPER ⭐</div>
+      <div class="stamp vetostamp">VETOED 🔥</div>`;
     if (i === top3.length - 1) attachDrag(c, n);
     wrap.appendChild(c);
   });
@@ -865,41 +906,52 @@ function attachDrag(card, n){
     if (!dragging) return;
     dx = px(e) - sx; dy = py(e) - sy;
     card.style.transform = `translate(${dx}px,${dy}px) rotate(${dx/18}deg)`;
+    const isUp = dy < -70 && Math.abs(dy) > Math.abs(dx) * 1.2;
     const p = Math.min(Math.abs(dx)/110, 1);
-    card.querySelector(dx > 0 ? ".stamp.like" : ".stamp.nope").style.opacity = p;
+    card.querySelector(".stamp.superstamp").style.opacity = isUp ? Math.min(-dy/170, 1) : 0;
+    card.querySelector(dx > 0 ? ".stamp.like" : ".stamp.nope").style.opacity = isUp ? 0 : p;
     card.querySelector(dx > 0 ? ".stamp.nope" : ".stamp.like").style.opacity = 0;
   });
   const up = () => {
     if (!dragging) return;
     dragging = false;
-    if (Math.abs(dx) > 110) flyOut(card, n, dx > 0);
-    else {
+    const snapback = () => {
       card.style.transition = "transform .3s cubic-bezier(.2,1.2,.4,1)";
       card.style.transform = "";
       card.querySelectorAll(".stamp").forEach(s => s.style.opacity = 0);
+    };
+    if (dy < -150 && Math.abs(dy) > Math.abs(dx)) {
+      if (superLeft() > 0) { flyOut(card, n, true, true); dx = 0; dy = 0; return; }
+      toast("No super-likes left today ⭐");
+      snapback();
     }
+    else if (Math.abs(dx) > 110) flyOut(card, n, dx > 0);
+    else snapback();
     dx = 0; dy = 0;
   };
   card.addEventListener("pointerup", up);
   card.addEventListener("pointercancel", up);
 }
 
-function flyOut(card, n, liked){
+function flyOut(card, n, liked, superFlag){
   const wrap = card.parentElement;
   const startT = card.style.transform || "";
   const ghost = card.cloneNode(true);
   ghost.classList.remove("under", "under2");
   ghost.classList.add("ghost");
-  commitSwipe(n, liked); // state + save immediately; re-renders the stack underneath
+  commitSwipe(n, liked, superFlag); // state + save immediately; re-renders the stack underneath
   ghost.style.transition = "none";
   ghost.style.transform = startT;
-  ghost.querySelector(liked ? ".stamp.like" : ".stamp.nope").style.opacity = 1;
-  ghost.querySelector(liked ? ".stamp.nope" : ".stamp.like").style.opacity = 0;
+  ghost.querySelectorAll(".stamp").forEach(s => s.style.opacity = 0);
+  ghost.querySelector(superFlag ? ".stamp.superstamp" : (liked ? ".stamp.like" : ".stamp.nope")).style.opacity = 1;
   wrap.appendChild(ghost);
   requestAnimationFrame(() => {
     ghost.style.transition = "transform .45s ease-in";
-    const off = (liked ? 1 : -1) * window.innerWidth * 1.2;
-    ghost.style.transform = `translate(${off}px, -40px) rotate(${liked ? 22 : -22}deg)`;
+    if (superFlag) ghost.style.transform = `translate(0px, ${-window.innerHeight * 1.2}px) rotate(-4deg)`;
+    else {
+      const off = (liked ? 1 : -1) * window.innerWidth * 1.2;
+      ghost.style.transform = `translate(${off}px, -40px) rotate(${liked ? 22 : -22}deg)`;
+    }
   });
   setTimeout(() => ghost.remove(), 520);
 }
@@ -913,31 +965,88 @@ function swipeTop(liked){
   if (top) flyOut(top, n, liked);
 }
 
-async function commitSwipe(n, liked){
+async function commitSwipe(n, liked, superFlag){
   decks[n.gender] = decks[n.gender].filter(x => x.id !== n.id);
   mySwipes[n.id] = liked;
+  if (superFlag) { mySuper.add(n.id); superToday++; updateActionCounters(); }
   lastSwipe = n.id;
   renderDeck();
   try {
     await api("/nameme_swipes?on_conflict=room_id,user_key,name_id", {
       method: "POST", headers: { "Prefer": "resolution=merge-duplicates" },
-      body: JSON.stringify({ room_id: room.id, user_key: me, name_id: n.id, liked }),
+      body: JSON.stringify({ room_id: room.id, user_key: me, name_id: n.id, liked, super: !!superFlag }),
     });
     if (liked) {
-      const hit = await api(`/nameme_swipes?room_id=eq.${room.id}&user_key=eq.${other()}&name_id=eq.${n.id}&liked=eq.true&select=name_id`);
+      const hit = await api(`/nameme_swipes?room_id=eq.${room.id}&user_key=eq.${other()}&name_id=eq.${n.id}&liked=eq.true&select=name_id,super`);
       if (hit.length) {
         partnerLikes.add(n.id);
+        if (hit[0].super) partnerSuper.add(n.id);
         computeMatches();
-        showMatch(n);
+        showMatch(n, !!superFlag || !!hit[0].super);
       }
     }
   } catch(e){ console.error(e); toast("⚠️ Couldn't save — check connection"); }
+}
+
+function superSwipe(){
+  const deck = decks[gender];
+  if (!deck.length) return;
+  if (superLeft() <= 0) { toast("No super-likes left today ⭐ — resets at midnight"); return; }
+  const n = deck[0];
+  const cards = document.querySelectorAll("#deckwrap .card:not(.ghost)");
+  const top = cards[cards.length - 1];
+  if (top) flyOut(top, n, true, true);
+}
+
+async function vetoName(id, fromCard){
+  if (vetoLeft() <= 0) { toast("🔥 You've used all 3 vetoes — that's the rule!"); return; }
+  const nm = byId[id].name;
+  if (!confirm(`🔥 Veto "${nm}" FOREVER?\n\nIt disappears for BOTH of you and cannot be undone.\nYou have ${vetoLeft()} veto${vetoLeft() > 1 ? "s" : ""} left.`)) return;
+  let ghost = null;
+  if (fromCard) {
+    const cards = document.querySelectorAll("#deckwrap .card:not(.ghost)");
+    const top = cards[cards.length - 1];
+    if (top) {
+      ghost = top.cloneNode(true);
+      ghost.classList.remove("under", "under2");
+      ghost.classList.add("ghost");
+      ghost.querySelectorAll(".stamp").forEach(s => s.style.opacity = 0);
+      ghost.querySelector(".stamp.vetostamp").style.opacity = 1;
+    }
+  }
+  vetoes.add(id); myVetoCount++;
+  updateActionCounters();
+  buildDecks(); renderDeck(); computeMatches();
+  if (ghost) {
+    const wrap = $("#deckwrap");
+    ghost.style.transition = "none";
+    wrap.appendChild(ghost);
+    requestAnimationFrame(() => {
+      ghost.style.transition = "transform .7s ease-in, opacity .7s, filter .7s";
+      ghost.style.transform = "scale(0.05) rotate(25deg) translateY(220px)";
+      ghost.style.opacity = "0";
+      ghost.style.filter = "brightness(0.25) sepia(1)";
+    });
+    setTimeout(() => ghost.remove(), 750);
+  }
+  try {
+    await api("/nameme_vetoes", { method: "POST", body: JSON.stringify({ room_id: room.id, user_key: me, name_id: id }) });
+    toast(`🔥 ${nm} is gone forever`);
+  } catch(e){
+    if (String(e).includes("duplicate")) { toast(`🔥 ${nm} is gone forever`); return; } // partner beat you to it
+    console.error(e); toast("⚠️ Veto didn't save — check connection");
+  }
+}
+function vetoTop(){
+  const deck = decks[gender];
+  if (deck.length) vetoName(deck[0].id, true);
 }
 
 async function undo(){
   if (lastSwipe == null) { toast("Nothing to undo"); return; }
   const id = lastSwipe; lastSwipe = null;
   delete mySwipes[id];
+  if (mySuper.has(id)) { mySuper.delete(id); superToday = Math.max(0, superToday - 1); updateActionCounters(); }
   decks[byId[id].gender].unshift(byId[id]);
   if (byId[id].gender === gender) renderDeck();
   computeMatches();
@@ -949,7 +1058,7 @@ async function undo(){
 
 // ---------- matches ----------
 function matchesFor(g){
-  return names.filter(x => x.gender === g && mySwipes[x.id] === true && partnerLikes.has(x.id));
+  return names.filter(x => x.gender === g && mySwipes[x.id] === true && partnerLikes.has(x.id) && !vetoes.has(x.id));
 }
 function computeMatches(){
   const count = matchesFor("boy").length + matchesFor("girl").length;
@@ -963,8 +1072,14 @@ function computeMatches(){
 
 async function refreshPartnerLikes(){
   try {
-    const p = await api(`/nameme_swipes?room_id=eq.${room.id}&user_key=eq.${other()}&liked=eq.true&select=name_id&limit=10000`);
+    const p = await api(`/nameme_swipes?room_id=eq.${room.id}&user_key=eq.${other()}&liked=eq.true&select=name_id,super&limit=10000`);
     partnerLikes = new Set(p.map(x => x.name_id));
+    partnerSuper = new Set(p.filter(x => x.super).map(x => x.name_id));
+    const v = await api(`/nameme_vetoes?room_id=eq.${room.id}&select=name_id,user_key&limit=100`);
+    vetoes = new Set(v.map(x => x.name_id));
+    myVetoCount = v.filter(x => x.user_key === me).length;
+    updateActionCounters();
+    buildDecks();
     if (!members[other()]) {
       const m = await api(`/nameme_members?room_id=eq.${room.id}&select=user_key,display_name`);
       members = {}; m.forEach(x => members[x.user_key] = x);
@@ -984,12 +1099,17 @@ async function renderMatches(){
     html += `<div class="seghead">${g === "boy" ? "💙 Boys" : "🩷 Girls"} · ${m.length}</div>`;
     if (m.length >= 4) html += `<div class="cta"><button class="ghostbtn" data-bracket="${g}">🏆 Narrow it down — start a ${g} bracket</button></div>`;
     html += m.map(x => `
-      <div class="row match"><span class="heartmark">💫</span>
-        <span class="nm">${escapeHtml(x.name)}</span><span class="rk">#${x.rank}</span></div>`).join("");
+      <div class="row match"><span class="heartmark">${(mySuper.has(x.id) || partnerSuper.has(x.id)) ? "⭐" : "💫"}</span>
+        <span class="nm">${escapeHtml(x.name)}</span><span class="rk">#${x.rank}</span>
+        <button class="vetobtn" data-vetom="${x.id}" title="Veto forever">🔥</button></div>`).join("");
   }
   rows.innerHTML = html || `<div class="zero"><span class="em">💔</span>No matches yet.<br>Keep swiping — or nudge ${escapeHtml(partnerName())} to catch up!</div>`;
   rows.querySelectorAll("[data-bracket]").forEach(b => b.onclick = () => {
     startBracket(b.dataset.bracket);
+  });
+  rows.querySelectorAll("[data-vetom]").forEach(b => b.onclick = async () => {
+    await vetoName(+b.dataset.vetom, false);
+    renderMatches();
   });
 }
 
@@ -997,7 +1117,7 @@ function renderLikes(){
   const rows = $("#likes-rows");
   let html = "";
   for (const g of ["boy","girl"]) {
-    const liked = names.filter(x => x.gender === g && mySwipes[x.id] === true);
+    const liked = names.filter(x => x.gender === g && mySwipes[x.id] === true && !vetoes.has(x.id));
     if (!liked.length) continue;
     html += `<div class="seghead">${g === "boy" ? "💙 Boys" : "🩷 Girls"} · ${liked.length}</div>`;
     html += liked.map(x => `
@@ -1189,11 +1309,16 @@ async function restartBracket(){
 }
 
 // ---------- modals ----------
-function showMatch(n){
+function showMatch(n, isSuper){
   $("#match-name").textContent = n.name;
-  $("#match-sub").textContent = `${myName()} and ${partnerName()} both love this name — it's a contender!`;
+  $("#match-hearts").textContent = isSuper ? "⭐🌟⭐" : "💘💥💘";
+  $("#match-title").textContent = isSuper ? "SUPER MATCH!" : "It's a match!";
+  $("#match-sub").textContent = isSuper
+    ? `One of you SUPER-liked this. ${myName()} and ${partnerName()} — this one's serious. ⭐`
+    : `${myName()} and ${partnerName()} both love this name — it's a contender!`;
   $("#matchmodal").classList.add("show");
-  confetti();
+  confetti(isSuper ? ["⭐","🌟","✨","💛","👶"] : undefined);
+  if (isSuper) setTimeout(() => confetti(["⭐","🌟","✨"]), 500);
 }
 $("#match-close").onclick = () => $("#matchmodal").classList.remove("show");
 function showChampion(n){
@@ -1203,8 +1328,8 @@ function showChampion(n){
 }
 $("#champ-close").onclick = () => $("#champmodal").classList.remove("show");
 
-function confetti(){
-  const emojis = ["🎉","💙","🩷","✨","👶","💜","🎊"];
+function confetti(set){
+  const emojis = set || ["🎉","💙","🩷","✨","👶","💜","🎊"];
   for (let i = 0; i < 34; i++) {
     const s = document.createElement("span");
     s.className = "confetti";
@@ -1243,12 +1368,15 @@ document.querySelectorAll(".gtoggle button").forEach(b => b.onclick = () => {
 
 $("#btn-like").onclick = () => swipeTop(true);
 $("#btn-nope").onclick = () => swipeTop(false);
+$("#btn-super").onclick = superSwipe;
+$("#btn-veto").onclick = vetoTop;
 $("#btn-undo").onclick = undo;
 document.addEventListener("keydown", e => {
   if ($("#s-main").classList.contains("hidden")) return;
   if ($("#view-swipe").style.display === "none") return;
   if (e.key === "ArrowRight") swipeTop(true);
   if (e.key === "ArrowLeft") swipeTop(false);
+  if (e.key === "ArrowUp") superSwipe();
   if (e.key === "z") undo();
 });
 
