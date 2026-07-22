@@ -634,13 +634,19 @@ function claimScreen(isCreator){
       } catch(e){ console.error(e); toast("⚠️ Couldn't join — try again"); }
     };
   } else {
-    // both slots taken — either a returning player on a new device, or someone else entirely
-    $("#claim-title").textContent = "Who are you?";
-    $("#claim-sub").textContent = "This game already has two players. Only tap a name if it's really you — otherwise you'd be swiping on their behalf!";
-    body.innerHTML = ["a","b"].map(k => `
-      <button class="slotbtn" data-slot="${k}"><span class="em">${k === "a" ? "🫶" : "💝"}</span> I'm ${escapeHtml(members[k].display_name)}</button>
-    `).join("") + `
-      <button class="ghostbtn" id="claim-new">🙋 We're someone else — start our own game</button>`;
+    // both seats taken — default to protecting the room; re-login is tucked behind a link
+    const nameA = members.a.display_name, nameB = members.b.display_name;
+    $("#claim-title").textContent = "This game is full 💞";
+    $("#claim-sub").textContent = `${nameA} & ${nameB} are already playing here. Want to find your baby's name too?`;
+    body.innerHTML = `
+      <button class="bigbtn" id="claim-new">Start our own game 💫</button>
+      <button class="ghostbtn" id="claim-reveal" style="font-size:13.5px">I'm ${escapeHtml(nameA)} or ${escapeHtml(nameB)} — log me back in</button>
+      <div id="claim-pick" class="hidden stack">
+        <p style="font-size:13px;color:var(--muted);margin:2px 0 0">Only tap your own name — you'd be swiping as them!</p>
+        ${["a","b"].map(k => `
+          <button class="slotbtn" data-slot="${k}"><span class="em">${k === "a" ? "🫶" : "💝"}</span> I'm ${escapeHtml(members[k].display_name)}</button>`).join("")}
+      </div>`;
+    $("#claim-reveal").onclick = () => $("#claim-pick").classList.toggle("hidden");
     body.querySelectorAll("[data-slot]").forEach(b => b.onclick = () => {
       me = b.dataset.slot; saveIdentity(); enterMain();
     });
