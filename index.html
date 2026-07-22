@@ -290,6 +290,7 @@
         <button id="sh-share"><span class="em">📤</span>Share</button>
       </div>
       <button class="bigbtn" id="btn-startswiping">Start swiping →</button>
+      <button class="ghostbtn" id="sh-app" style="font-size:13.5px">👯 Sharing with friends? Send them the app, not this invite</button>
     </div>
   </div>
 
@@ -633,15 +634,24 @@ function claimScreen(isCreator){
       } catch(e){ console.error(e); toast("⚠️ Couldn't join — try again"); }
     };
   } else {
-    // both slots taken — device lost identity; pick who you are
+    // both slots taken — either a returning player on a new device, or someone else entirely
     $("#claim-title").textContent = "Who are you?";
-    $("#claim-sub").textContent = "This room already has two players.";
+    $("#claim-sub").textContent = "This game already has two players. Only tap a name if it's really you — otherwise you'd be swiping on their behalf!";
     body.innerHTML = ["a","b"].map(k => `
       <button class="slotbtn" data-slot="${k}"><span class="em">${k === "a" ? "🫶" : "💝"}</span> I'm ${escapeHtml(members[k].display_name)}</button>
-    `).join("");
+    `).join("") + `
+      <button class="ghostbtn" id="claim-new">🙋 We're someone else — start our own game</button>`;
     body.querySelectorAll("[data-slot]").forEach(b => b.onclick = () => {
       me = b.dataset.slot; saveIdentity(); enterMain();
     });
+    $("#claim-new").onclick = async () => {
+      try {
+        room = await createRoom();
+        history.replaceState(null, "", "?room=" + room.code);
+        members = {};
+        claimScreen(true);
+      } catch(e){ console.error(e); toast("⚠️ Couldn't create a room — try again"); }
+    };
   }
 }
 
@@ -666,6 +676,12 @@ function inviteScreen(){
     else toast("Sharing not supported here — use Copy");
   };
   $("#btn-startswiping").onclick = enterMain;
+  $("#sh-app").onclick = async () => {
+    const appMsg = `👶 We've been picking our baby's name with NameMe — you two should play too: ${location.origin + location.pathname}`;
+    if (navigator.share) { try { await navigator.share({ title: "NameMe 👶", text: appMsg }); return; } catch(e){} }
+    try { await navigator.clipboard.writeText(appMsg); toast("🔗 App link copied — no room code attached"); }
+    catch(e){ toast("Copy failed"); }
+  };
 }
 
 // ---------- main ----------
