@@ -100,12 +100,14 @@
     background:#ffffffb8; color:var(--muted); cursor:pointer; box-shadow:0 2px 8px rgba(30,41,59,.06); white-space:nowrap;
   }
   .cats button.on{background:var(--ink); color:#fff;}
-  .letters{display:flex; flex-wrap:wrap; gap:6px; padding:8px 18px 0; justify-content:center;}
-  .letters button{
-    width:34px; height:34px; border:none; border-radius:50%; font-family:inherit; font-weight:800; font-size:14px;
+  .letters, .counts{display:flex; flex-wrap:wrap; gap:6px; padding:8px 18px 0; justify-content:center;}
+  .letters button, .counts button{
+    height:34px; border:none; border-radius:50%; font-family:inherit; font-weight:800; font-size:14px;
     background:#fff; color:var(--ink); cursor:pointer; box-shadow:0 2px 8px rgba(30,41,59,.08);
   }
-  .letters button.on{background:var(--accent); color:#fff;}
+  .letters button{width:34px;}
+  .counts button{width:auto; padding:0 16px; border-radius:999px;}
+  .letters button.on, .counts button.on{background:var(--accent); color:#fff;}
   .progress{padding:6px 20px 0; font-size:13px; color:var(--muted); display:flex; justify-content:space-between;}
   .progress b{color:var(--ink);}
 
@@ -296,6 +298,7 @@
       </div>
       <div class="cats" id="cats"></div>
       <div class="letters hidden" id="letters"></div>
+      <div class="counts hidden" id="counts"></div>
       <div class="progress"><span id="prog-left"></span><span id="prog-right"></span></div>
       <div id="deckwrap"></div>
       <div class="actions">
@@ -673,16 +676,56 @@ async function loadData(){
   buildDecks();
 }
 
+// seeded random deck — same seed (room code + size) on both phones, so
+// partners see the SAME random selection and can actually match on it
+function hashStr(s){
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function seededRand(seed){
+  return function(){
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+let randomCache = {}, randomSetCache = {};
+function randomList(g, n){
+  const key = g + ":" + n;
+  if (randomCache[key]) return randomCache[key];
+  const pool = names.filter(x => x.gender === g).slice();
+  const rnd = seededRand(hashStr((room ? room.code : "solo") + ":" + g + ":" + n));
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  randomCache[key] = pool.slice(0, Math.min(n, pool.length));
+  randomSetCache[key] = new Set(randomCache[key].map(x => x.id));
+  return randomCache[key];
+}
+function inRandom(n){
+  randomList(n.gender, cat.value);
+  return randomSetCache[n.gender + ":" + cat.value].has(n.id);
+}
+
 function inCat(n){
   if (cat.type === "top100") return n.rank <= 100;
   if (cat.type === "biblical") return BIBLICAL_SET[n.gender].has(n.name);
   if (cat.type === "decade") return DECADE_SETS[cat.value][n.gender].has(n.name);
   if (cat.type === "letter") return n.name.toUpperCase().startsWith(cat.value);
+  if (cat.type === "random") return inRandom(n);
   return true; // 'all'
 }
 
 function buildDecks(){
   for (const g of ["boy","girl"]) {
+    if (cat.type === "random") {
+      // keep the seeded order — it already feels random and matches the partner's order
+      decks[g] = randomList(g, cat.value).filter(x => !(x.id in mySwipes));
+      continue;
+    }
     const un = names.filter(x => x.gender === g && !(x.id in mySwipes) && inCat(x));
     const d = [];
     for (let i = 0; i < un.length; i += 25) {
@@ -713,26 +756,48 @@ const CATS = [
   { key: "1980s", label: "1980s" },
   { key: "1990s", label: "1990s" },
   { key: "2000s", label: "2000s" },
+  { key: "random", label: "🎲 Random" },
   { key: "letter", label: "🔤 A–Z" },
 ];
-function catKey(){ return cat.type === "decade" ? cat.value : (cat.type === "letter" ? "letter" : cat.type); }
+const RANDOM_SIZES = [50, 100, 250, 500];
+function catKey(){
+  if (cat.type === "decade") return cat.value;
+  if (cat.type === "letter") return "letter";
+  if (cat.type === "random") return "random";
+  return cat.type;
+}
 function catDesc(){
   if (cat.type === "top100") return `top-100 ${gender} names`;
   if (cat.type === "biblical") return `biblical ${gender} names`;
   if (cat.type === "decade") return `${cat.value} ${gender} names`;
   if (cat.type === "letter") return `${gender} names with ${cat.value}`;
+  if (cat.type === "random") return `random ${gender} names`;
   return `${gender} names`;
 }
 function renderCats(){
   const el = $("#cats");
-  el.innerHTML = CATS.map(c =>
-    `<button data-cat="${c.key}" class="${catKey() === c.key ? "on" : ""}">${c.label}${c.key === "letter" && cat.type === "letter" ? " · " + cat.value : ""}</button>`
-  ).join("");
+  el.innerHTML = CATS.map(c => {
+    let extra = "";
+    if (c.key === "letter" && cat.type === "letter") extra = " · " + cat.value;
+    if (c.key === "random" && cat.type === "random") extra = " · " + cat.value;
+    return `<button data-cat="${c.key}" class="${catKey() === c.key ? "on" : ""}">${c.label}${extra}</button>`;
+  }).join("");
   el.querySelectorAll("[data-cat]").forEach(b => b.onclick = () => {
     const k = b.dataset.cat;
-    if (k === "letter") { $("#letters").classList.toggle("hidden"); renderLetters(); return; }
+    if (k === "letter") { $("#counts").classList.add("hidden"); $("#letters").classList.toggle("hidden"); renderLetters(); return; }
+    if (k === "random") { $("#letters").classList.add("hidden"); $("#counts").classList.toggle("hidden"); renderCounts(); return; }
     $("#letters").classList.add("hidden");
+    $("#counts").classList.add("hidden");
     cat = /^\d{4}s$/.test(k) ? { type: "decade", value: k } : { type: k };
+    saveCat();
+  });
+}
+function renderCounts(){
+  const el = $("#counts");
+  el.innerHTML = RANDOM_SIZES.map(n =>
+    `<button class="${cat.type === "random" && cat.value === n ? "on" : ""}">${n}</button>`).join("");
+  el.querySelectorAll("button").forEach(b => b.onclick = () => {
+    cat = { type: "random", value: +b.textContent };
     saveCat();
   });
 }
@@ -749,6 +814,7 @@ function saveCat(){
   localStorage.setItem("nameme_cat", JSON.stringify(cat));
   renderCats();
   if (!$("#letters").classList.contains("hidden")) renderLetters();
+  if (!$("#counts").classList.contains("hidden")) renderCounts();
   buildDecks(); renderDeck();
 }
 
