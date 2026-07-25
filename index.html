@@ -430,7 +430,10 @@ const HEADERS = { "apikey": ANON_KEY, "Authorization": "Bearer " + ANON_KEY, "Co
 
 // ---------- analytics (production domains only) ----------
 const GA_ID = "G-9TBFPTEBWV";
-if (/(ourbbname\.com|vercel\.app)$/.test(location.hostname)) {
+const ANALYTICS_ON = /(ourbbname\.com|vercel\.app)$/.test(location.hostname);
+if (ANALYTICS_ON) {
+  // Vercel Web Analytics — queue stub so window.va() is callable before the script loads
+  window.va = window.va || function(){ (window.vaq = window.vaq || []).push(arguments); };
   const v = document.createElement("script");
   v.defer = true; v.src = "/_vercel/insights/script.js";
   document.head.appendChild(v);
@@ -443,6 +446,15 @@ if (/(ourbbname\.com|vercel\.app)$/.test(location.hostname)) {
     gtag("js", new Date());
     gtag("config", GA_ID);
   }
+}
+// Fire one funnel event to BOTH Google Analytics and Vercel. Keep props tiny
+// (Vercel's free tier allows 2 custom-event properties).
+function trackEvent(name, props){
+  try {
+    if (!ANALYTICS_ON) { console.log("[track]", name, props || ""); return; }
+    if (window.gtag) gtag("event", name, props || {});
+    if (window.va) window.va("event", { name, data: props || {} });
+  } catch(e){ /* analytics must never break the game */ }
 }
 
 // ---------- state ----------
@@ -659,6 +671,7 @@ async function createRoom(){
         method: "POST", headers: { "Prefer": "return=representation" },
         body: JSON.stringify({ code }),
       });
+      trackEvent("room_created", { room: r[0].code });
       return r[0];
     } catch(e){ /* code collision — retry */ }
   }
@@ -672,6 +685,8 @@ async function claimSlot(slot, displayName){
   members[slot] = { user_key: slot, display_name: displayName };
   me = slot;
   saveIdentity();
+  // seat 'b' claimed = a shared invite succeeded and the partner is now in the game
+  if (slot === "b") trackEvent("partner_joined", { room: room.code });
 }
 
 function claimScreen(isCreator){
@@ -728,17 +743,21 @@ function inviteScreen(){
   const msg = () => `👶💘 Help me name our baby! Swipe baby names with me on NameMe — tap to join our room: ${roomLink()}`;
   const dest = () => $("#invite-to").value.trim();
   $("#sh-sms").onclick = () => {
+    trackEvent("invite_shared", { method: "sms" });
     const d = dest().replace(/[^\d+]/g, "");
     location.href = `sms:${d}?&body=${encodeURIComponent(msg())}`;
   };
   $("#sh-email").onclick = () => {
+    trackEvent("invite_shared", { method: "email" });
     location.href = `mailto:${encodeURIComponent(dest())}?subject=${encodeURIComponent("Help me name our baby 👶💘")}&body=${encodeURIComponent(msg())}`;
   };
   $("#sh-copy").onclick = async () => {
+    trackEvent("invite_shared", { method: "copy" });
     try { await navigator.clipboard.writeText(msg()); toast("🔗 Invite copied!"); }
     catch(e){ toast("Copy failed — long-press the code"); }
   };
   $("#sh-share").onclick = async () => {
+    trackEvent("invite_shared", { method: "share" });
     if (navigator.share) { try { await navigator.share({ title: "NameMe 👶", text: msg() }); } catch(e){} }
     else toast("Sharing not supported here — use Copy");
   };
