@@ -1253,7 +1253,7 @@ function seedSlots(n){
 async function startBracket(g){
   const m = matchesFor(g).sort((a, b) => a.rank - b.rank);
   if (m.length < 4) { toast("Need at least 4 matches for a bracket"); return; }
-  const entrants = m.slice(0, 16).map(x => x.id);
+  const entrants = m.map(x => x.id); // seed ALL matches — bracket auto-adds byes to fill
   try {
     const existing = await api(`/nameme_brackets?room_id=eq.${room.id}&gender=eq.${g}&status=eq.active&select=id`);
     if (existing.length) { switchView("bracket"); return; }
@@ -1261,7 +1261,10 @@ async function startBracket(g){
       method: "POST",
       body: JSON.stringify({ room_id: room.id, gender: g, entrants }),
     });
-    if (m.length > 16) toast("Top 16 matches seeded in!");
+    const slots = nextPow2(m.length), byes = slots - m.length;
+    toast(byes
+      ? `All ${m.length} matches in! Top ${byes} seed${byes > 1 ? "s" : ""} get a first-round bye.`
+      : `All ${m.length} matches seeded — let's go!`);
     switchView("bracket");
   } catch(e){ console.error(e); toast("⚠️ Couldn't start bracket"); }
 }
