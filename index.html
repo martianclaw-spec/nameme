@@ -420,6 +420,16 @@
   </div>
 </div>
 
+<!-- BRACKET SIZE MODAL -->
+<div id="sizemodal" class="modal">
+  <div class="mcard">
+    <div class="hearts">🏆</div>
+    <h2>How big a showdown?</h2>
+    <p id="size-sub"></p>
+    <div class="stack" id="size-opts"></div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -1250,10 +1260,26 @@ function seedSlots(n){
   return r;
 }
 
-async function startBracket(g){
+function chooseBracketSize(g, count){
+  $("#size-sub").textContent = `You matched on ${count} names! Pick how many go head-to-head — "Top" means your most popular matches seed in first.`;
+  const opts = [16, 32, 64].filter(s => s < count)
+    .map(s => `<button class="ghostbtn" data-size="${s}"><b>Top ${s}</b> · ~${s - 1} picks each</button>`);
+  opts.push(`<button class="ghostbtn" data-size="${count}"><b>All ${count}</b> · ~${count - 1} picks each 💪</button>`);
+  opts.push(`<button class="ghostbtn" data-size="cancel" style="color:var(--muted)">Cancel</button>`);
+  $("#size-opts").innerHTML = opts.join("");
+  $("#size-opts").querySelectorAll("[data-size]").forEach(b => b.onclick = () => {
+    $("#sizemodal").classList.remove("show");
+    if (b.dataset.size !== "cancel") startBracket(g, +b.dataset.size);
+  });
+  $("#sizemodal").classList.add("show");
+}
+
+async function startBracket(g, size){
   const m = matchesFor(g).sort((a, b) => a.rank - b.rank);
   if (m.length < 4) { toast("Need at least 4 matches for a bracket"); return; }
-  const entrants = m.map(x => x.id); // seed ALL matches — bracket auto-adds byes to fill
+  if (!size && m.length > 16) { chooseBracketSize(g, m.length); return; }
+  const chosen = Math.min(size || m.length, m.length);
+  const entrants = m.slice(0, chosen).map(x => x.id); // bracket auto-adds byes up to the next power of 2
   try {
     const existing = await api(`/nameme_brackets?room_id=eq.${room.id}&gender=eq.${g}&status=eq.active&select=id`);
     if (existing.length) { switchView("bracket"); return; }
@@ -1261,10 +1287,11 @@ async function startBracket(g){
       method: "POST",
       body: JSON.stringify({ room_id: room.id, gender: g, entrants }),
     });
-    const slots = nextPow2(m.length), byes = slots - m.length;
-    toast(byes
-      ? `All ${m.length} matches in! Top ${byes} seed${byes > 1 ? "s" : ""} get a first-round bye.`
-      : `All ${m.length} matches seeded — let's go!`);
+    const byes = nextPow2(chosen) - chosen;
+    const byeNote = byes ? ` Top ${byes} seed${byes > 1 ? "s" : ""} get a first-round bye.` : "";
+    toast(chosen < m.length
+      ? `Top ${chosen} of ${m.length} matches seeded in!${byeNote}`
+      : `All ${chosen} matches in!${byeNote}`);
     switchView("bracket");
   } catch(e){ console.error(e); toast("⚠️ Couldn't start bracket"); }
 }
