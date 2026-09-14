@@ -75,7 +75,12 @@
   }
 
   /* ---------- centered screens ---------- */
-  .screen{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:32px 28px; text-align:center; overflow-y:auto;}
+  /* justify-content:center would clip the top unreachably once content is taller
+     than the screen (scrollTop can't go negative) — auto margins center only the
+     spare room, so tall content scrolls from the top instead of losing its head. */
+  .screen{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:12px; padding:32px 28px; text-align:center; overflow-y:auto;}
+  .screen > :first-child{margin-top:auto;}
+  .screen > :last-child{margin-bottom:auto;}
   .screen .baby{font-size:68px; line-height:1; filter:drop-shadow(0 8px 16px rgba(14,165,233,.25));}
   .screen h1{font-family:'Fraunces',serif; font-size:42px; margin:4px 0 0; letter-spacing:-.5px;}
   .screen h2{font-family:'Fraunces',serif; font-size:28px; margin:0;}
