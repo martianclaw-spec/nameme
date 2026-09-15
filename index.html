@@ -425,6 +425,21 @@
   </div>
 </div>
 
+<!-- GAME MENU MODAL -->
+<div id="menumodal" class="modal">
+  <div class="mcard">
+    <div class="hearts">⚙️</div>
+    <h2>This game</h2>
+    <p id="menu-sub"></p>
+    <div class="stack">
+      <button class="ghostbtn" id="menu-invite">💌 Invite / show our code</button>
+      <button class="ghostbtn" id="menu-switch">🔄 I'm the other player on this phone</button>
+      <button class="bigbtn" id="menu-new">✨ Start a brand-new game</button>
+      <button class="ghostbtn" id="menu-close" style="color:var(--muted)">Back to swiping</button>
+    </div>
+  </div>
+</div>
+
 <!-- BRACKET SIZE MODAL -->
 <div id="sizemodal" class="modal">
   <div class="mcard">
@@ -704,6 +719,20 @@ async function claimSlot(slot, displayName){
   if (slot === "b") trackEvent("partner_joined", { room: room.code });
 }
 
+// Leave whatever room this device remembers and open a brand-new one.
+// Reachable from every dead end: wrong invite, full room, and the menu.
+async function startFreshGame(){
+  try {
+    const old = localStorage.getItem("nameme_room");
+    if (old) { localStorage.removeItem("nameme_room"); localStorage.removeItem("nameme_id_" + old); }
+    room = await createRoom();
+    history.replaceState(null, "", "?room=" + room.code);
+    members = {}; me = null;
+    mySwipes = {}; partnerLikes = new Set(); bracket = null; champShown = false;
+    claimScreen(true);
+  } catch(e){ console.error(e); toast("⚠️ Couldn't create a room — try again"); }
+}
+
 function claimScreen(isCreator){
   show("s-claim");
   const body = $("#claim-body");
@@ -716,14 +745,20 @@ function claimScreen(isCreator){
       : `Join ${(members.a && members.a.display_name) || "your partner"}'s room and start swiping.`;
     body.innerHTML = `
       <input type="text" id="claim-name" placeholder="Your first name" maxlength="20">
-      <button class="bigbtn" id="claim-go">Let's go →</button>`;
+      <button class="bigbtn" id="claim-go">Let's go →</button>
+      ${isCreator ? "" : `<button class="ghostbtn" id="claim-notme" style="font-size:13.5px">That's not me — start my own game</button>`}`;
     $("#claim-go").onclick = async () => {
-      const n = $("#claim-name").value.trim() || (slot === "a" ? "Partner 1" : "Partner 2");
+      // a blank name shows up in the partner's matches ("both Partner 1 and …"), so ask for it
+      const n = $("#claim-name").value.trim();
+      if (!n) { toast("👋 What should we call you?"); $("#claim-name").focus(); return; }
       try {
         await claimSlot(slot, n);
         if (isCreator) inviteScreen(); else enterMain();
       } catch(e){ console.error(e); toast("⚠️ Couldn't join — try again"); }
     };
+    $("#claim-name").addEventListener("keydown", e => { if (e.key === "Enter") $("#claim-go").click(); });
+    const notMe = $("#claim-notme");
+    if (notMe) notMe.onclick = startFreshGame;
   } else {
     // both seats taken — default to protecting the room; re-login is tucked behind a link
     const nameA = members.a.display_name, nameB = members.b.display_name;
@@ -741,14 +776,7 @@ function claimScreen(isCreator){
     body.querySelectorAll("[data-slot]").forEach(b => b.onclick = () => {
       me = b.dataset.slot; saveIdentity(); enterMain();
     });
-    $("#claim-new").onclick = async () => {
-      try {
-        room = await createRoom();
-        history.replaceState(null, "", "?room=" + room.code);
-        members = {};
-        claimScreen(true);
-      } catch(e){ console.error(e); toast("⚠️ Couldn't create a room — try again"); }
-    };
+    $("#claim-new").onclick = startFreshGame;
   }
 }
 
@@ -1519,10 +1547,20 @@ document.addEventListener("keydown", e => {
 
 $("#chip-room").onclick = inviteScreen;
 $("#chip-user").onclick = () => {
-  if (confirm("Switch who you are on this device?")) {
-    localStorage.removeItem("nameme_id_" + room.code);
-    claimScreen(false);
-  }
+  $("#menu-sub").textContent = `You're playing as ${myName()} with ${partnerName()} · code ${room.code}`;
+  $("#menumodal").classList.add("show");
+};
+$("#menu-close").onclick = () => $("#menumodal").classList.remove("show");
+$("#menu-invite").onclick = () => { $("#menumodal").classList.remove("show"); inviteScreen(); };
+$("#menu-switch").onclick = () => {
+  $("#menumodal").classList.remove("show");
+  localStorage.removeItem("nameme_id_" + room.code);
+  claimScreen(false);
+};
+$("#menu-new").onclick = () => {
+  if (!confirm("Start a brand-new game? This phone will leave the current game — your matches stay saved under code " + room.code + ".")) return;
+  $("#menumodal").classList.remove("show");
+  startFreshGame();
 };
 
 // ---------- boot ----------
